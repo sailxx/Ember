@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ember — логотипы</title>
+<style>
+*{box-sizing:border-box;margin:0}
+body{background:#0b0a09;color:#f5efe8;font:14px/1.4 system-ui,"Segoe UI",sans-serif;padding:32px 20px 60px}
+h1{font-size:22px;text-align:center}
+.sub{text-align:center;color:#8a8178;margin:6px 0 36px}
+.row{display:flex;flex-wrap:wrap;gap:40px;justify-content:center}
+.v{width:200px;text-align:center}
+.tile{width:200px;height:200px;border-radius:46px;background:#000;border:1px solid #241e18;overflow:hidden}
+.tile svg,.sm svg{width:100%;height:100%;display:block}
+.smr{display:flex;gap:14px;justify-content:center;align-items:center;margin-top:14px}
+.sm{width:56px;height:56px;border-radius:50%;overflow:hidden;background:#000;border:1px solid #241e18}
+.sm.s{width:32px;height:32px}
+.mono{width:32px;height:32px;border-radius:50%;background:#2a2622;display:grid;place-items:center}
+.mono svg{width:22px;height:22px}
+h2{font-size:15px;margin-top:14px}
+p{font-size:12px;color:#8a8178}
+</style></head><body>
+<h1>Ember — 5 логотипов</h1>
+<p class="sub">Иконка приложения · круглая маска · иконка плитки и уведомления</p>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+ <radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ff6a1f" stop-opacity=".75"/><stop offset="1" stop-color="#ff6a1f" stop-opacity="0"/></radialGradient>
+ <radialGradient id="core" cx=".5" cy=".42" r=".6"><stop offset="0" stop-color="#fff2d6"/><stop offset=".35" stop-color="#ffb23e"/><stop offset="1" stop-color="#ff6a1f"/></radialGradient>
+ <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd27a"/><stop offset=".6" stop-color="#ff8a2a"/><stop offset="1" stop-color="#ff5a14"/></linearGradient>
+ <linearGradient id="fl" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff5a14"/><stop offset=".55" stop-color="#ffb23e"/><stop offset="1" stop-color="#fff2d6"/></linearGradient>
+ <symbol id="l1" viewBox="0 0 108 108"><rect width="108" height="108" fill="#000"/><circle cx="54" cy="54" r="46" fill="url(#glow)"/><circle cx="54" cy="54" r="21" fill="url(#core)"/></symbol>
+ <symbol id="l2" viewBox="0 0 108 108"><rect width="108" height="108" fill="#000"/><circle cx="54" cy="66" r="44" fill="url(#glow)"/>
+  <clipPath id="hz"><rect x="0" y="0" width="108" height="66"/></clipPath>
+  <g clip-path="url(#hz)"><circle cx="54" cy="66" r="26" fill="url(#sun)"/></g>
+  <rect x="24" y="70" width="60" height="3.5" rx="1.75" fill="#ffb23e"/><rect x="34" y="78" width="40" height="3.5" rx="1.75" fill="#ff6a1f" opacity=".7"/><rect x="44" y="86" width="20" height="3.5" rx="1.75" fill="#ff6a1f" opacity=".4"/></symbol>
+ <symbol id="l3" viewBox="0 0 108 108"><rect width="108" height="108" fill="#000"/><ellipse cx="54" cy="66" rx="40" ry="34" fill="url(#glow)"/>
+  <path d="M54 24c4 14 22 22 22 42a22 22 0 0 1-44 0c0-10 6-15 9-21 2 6 5 9 8 10-1-12 2-22 5-31z" fill="url(#fl)"/>
+  <path d="M54 58c3 6 9 8 9 15a9 9 0 0 1-18 0c0-5 5-8 9-15z" fill="#000" opacity=".55"/></symbol>
+ <symbol id="l4" viewBox="0 0 108 108"><rect width="108" height="108" fill="#000"/><circle cx="54" cy="54" r="44" fill="url(#glow)" opacity=".8"/>
+  <path d="M33 54h42a21 21 0 1 0-6 15" fill="none" stroke="url(#fl)" stroke-width="9" stroke-linecap="round"/></symbol>
+ <symbol id="l5" viewBox="0 0 108 108"><rect width="108" height="108" fill="#000"/><circle cx="58" cy="52" r="44" fill="url(#glow)"/>
+  <path d="M62 26a28 28 0 1 0 22 42 24 24 0 0 1-22-42z" fill="url(#sun)"/>
+  <circle cx="74" cy="34" r="2.5" fill="#ffd27a"/><circle cx="84" cy="46" r="1.6" fill="#ffd27a" opacity=".7"/></symbol>
+</defs></svg>
+
+<div class="row">
+ <div class="v"><div class="tile"><svg><use href="#l1"/></svg></div>
+  <div class="smr"><div class="sm"><svg><use href="#l1"/></svg></div><div class="sm s"><svg><use href="#l1"/></svg></div>
+  <div class="mono"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" fill="#fff"/><circle cx="12" cy="12" r="9.5" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1.5"/></svg></div></div>
+  <h2>1. Уголёк</h2><p>Раскалённое ядро и свечение. Просто, читается в любом размере</p></div>
+
+ <div class="v"><div class="tile"><svg><use href="#l2"/></svg></div>
+  <div class="smr"><div class="sm"><svg><use href="#l2"/></svg></div><div class="sm s"><svg><use href="#l2"/></svg></div>
+  <div class="mono"><svg viewBox="0 0 24 24"><path d="M5 14a7 7 0 0 1 14 0z" fill="#fff"/><rect x="4" y="16" width="16" height="1.8" rx=".9" fill="#fff"/><rect x="8" y="19.5" width="8" height="1.8" rx=".9" fill="#fff" opacity=".6"/></svg></div></div>
+  <h2>2. Закат</h2><p>Солнце уходит за горизонт — связь с графиком суток</p></div>
+
+ <div class="v"><div class="tile"><svg><use href="#l3"/></svg></div>
+  <div class="smr"><div class="sm"><svg><use href="#l3"/></svg></div><div class="sm s"><svg><use href="#l3"/></svg></div>
+  <div class="mono"><svg viewBox="0 0 24 24"><path d="M12 2c1 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-4 2.5-6 .5 1.5 1.5 2.5 2 2.7C10.3 6.5 11 4.5 12 2z" fill="#fff"/></svg></div></div>
+  <h2>3. Пламя</h2><p>Огонёк с тёмной сердцевиной, буквально «ember»</p></div>
+
+ <div class="v"><div class="tile"><svg><use href="#l4"/></svg></div>
+  <div class="smr"><div class="sm"><svg><use href="#l4"/></svg></div><div class="sm s"><svg><use href="#l4"/></svg></div>
+  <div class="mono"><svg viewBox="0 0 24 24"><path d="M6 12h12a6 6 0 1 0-1.8 4.3" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg></div></div>
+  <h2>4. Буква e</h2><p>Монограмма из светящейся линии</p></div>
+
+ <div class="v"><div class="tile"><svg><use href="#l5"/></svg></div>
+  <div class="smr"><div class="sm"><svg><use href="#l5"/></svg></div><div class="sm s"><svg><use href="#l5"/></svg></div>
+  <div class="mono"><svg viewBox="0 0 24 24"><path d="M13 4a8 8 0 1 0 7 12 7 7 0 0 1-7-12z" fill="#fff"/></svg></div></div>
+  <h2>5. Тёплая луна</h2><p>Полумесяц янтарного цвета — ночь без синего</p></div>
+</div></body></html>

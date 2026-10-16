@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ember — прототипы v2</title>
+<style>
+:root{--amber:#ffb23e;--ember:#ff6a1f;--deep:#7a2a08;--line:#241e18;--mut:#8a8178;--tx:#f5efe8}
+*{box-sizing:border-box;margin:0}
+body{background:#0b0a09;color:var(--tx);font:14px/1.4 "Golos Text",system-ui,"Segoe UI",sans-serif;padding:32px 20px 60px}
+h1{font-size:22px;text-align:center}
+.sub{text-align:center;color:var(--mut);margin:6px 0 32px}
+.row{display:flex;flex-wrap:wrap;gap:36px;justify-content:center}
+.v{width:280px}
+.v h2{font-size:15px;margin:14px 0 2px;text-align:center}
+.v p{font-size:12px;color:var(--mut);text-align:center}
+.ph{width:280px;height:580px;border-radius:34px;border:6px solid #26211c;background:#000;overflow:hidden;position:relative;padding:16px;display:flex;flex-direction:column}
+.sb{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);margin-bottom:12px}
+.mono{font-family:"JetBrains Mono",ui-monospace,Consolas,monospace}
+.t{font-size:10.5px;color:var(--mut);letter-spacing:.1em;text-transform:uppercase}
+.sw{width:38px;height:22px;border-radius:11px;background:var(--amber);position:relative;flex:none;box-shadow:0 0 14px rgba(255,178,62,.45)}
+.sw::after{content:"";position:absolute;right:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#000}
+.bar{height:6px;border-radius:3px;background:var(--line);position:relative;margin:12px 0}
+.bar i{position:absolute;inset:0 auto 0 0;border-radius:3px;background:linear-gradient(90deg,var(--amber),var(--ember))}
+.bar s{position:absolute;top:-6px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 0 14px var(--amber)}
+
+/* 1 orb */
+.orb{position:absolute;left:50%;top:150px;width:210px;height:210px;margin-left:-105px;border-radius:50%;
+ background:radial-gradient(circle at 50% 42%,#fff2d6 0,#ffb23e 28%,#ff6a1f 62%,#5a1d05 100%);
+ box-shadow:0 0 70px 20px rgba(255,106,31,.5),0 0 180px 70px rgba(255,106,31,.22)}
+.orbv{position:absolute;left:0;right:0;top:230px;text-align:center;color:#2a1000;font-size:34px;font-weight:600}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#0d0a08;border-top:1px solid var(--line);border-radius:26px 26px 0 0;padding:14px 16px 16px}
+.sheet .grip{width:34px;height:4px;border-radius:2px;background:#3a3129;margin:0 auto 12px}
+.line{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.line:last-child{border:0}
+
+/* 2 bento */
+.bento{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1}
+.tile{border:1px solid var(--line);border-radius:20px;padding:12px;background:linear-gradient(160deg,#15100c,#080605);position:relative;overflow:hidden}
+.tile.a{grid-column:span 2;background:linear-gradient(135deg,rgba(255,178,62,.22),rgba(255,106,31,.06) 60%,#080605);border-color:#4a3418}
+.tile b{font-size:26px;font-weight:600;display:block;margin-top:6px}
+.tile.a b{font-size:40px}
+.glowdot{position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,rgba(255,106,31,.55),transparent 70%)}
+
+/* 3 ruler */
+.ruler{position:relative;flex:1;margin:0 -16px;overflow:hidden;
+ -webkit-mask:linear-gradient(180deg,transparent,#000 22%,#000 78%,transparent);mask:linear-gradient(180deg,transparent,#000 22%,#000 78%,transparent)}
+.ruler .tick{position:absolute;left:0;right:0;display:flex;align-items:center;gap:10px;padding-left:24px;color:#5a5047;font-size:12px}
+.ruler .tick::before{content:"";width:18px;height:1px;background:#4a4037}
+.ruler .tick.m{color:var(--tx);font-size:22px;font-weight:500}
+.ruler .tick.m::before{width:56px;height:2px;background:var(--amber);box-shadow:0 0 12px var(--amber)}
+.rmark{position:absolute;right:16px;top:50%;margin-top:-1px;width:70px;height:2px;background:var(--amber)}
+.big{font-size:56px;font-weight:300;line-height:1}
+
+/* 4 day */
+.day{position:relative;height:150px;margin:6px 0}
+.day svg{width:100%;height:100%}
+.hours{display:flex;justify-content:space-between;color:var(--mut);font-size:10px}
+.seg{display:flex;gap:6px;margin:8px 0}
+.seg span{flex:1;text-align:center;padding:8px 0;border-radius:12px;border:1px solid var(--line);font-size:12px;color:var(--mut)}
+.seg .on{background:rgba(255,178,62,.14);border-color:#6a4a1c;color:var(--amber)}
+
+/* 5 sentence */
+.sentence{font-size:25px;line-height:1.3;font-weight:500;margin-top:6px}
+.w{color:var(--amber);border-bottom:2px solid rgba(255,178,62,.4);white-space:nowrap}
+.fade{position:absolute;left:-40px;right:-40px;bottom:-60px;height:240px;background:radial-gradient(ellipse at 50% 100%,rgba(255,106,31,.7),transparent 70%)}
+.btn{margin-top:auto;position:relative;text-align:center;padding:14px;border-radius:18px;background:linear-gradient(90deg,var(--amber),var(--ember));color:#2a1000;font-weight:600;box-shadow:0 0 30px rgba(255,106,31,.4)}
+</style></head><body>
+<h1>Ember — 5 прототипов, v2</h1>
+<p class="sub">Та же чёрно-янтарная палитра, другая структура экрана</p>
+<div class="row">
+
+<div class="v"><div class="ph">
+ <div class="sb"><span>21:40</span><span>●●●</span></div>
+ <div class="t">Ember · вкл</div>
+ <div class="orb"></div><div class="orbv mono">2700K</div>
+ <div class="sheet">
+  <div class="grip"></div>
+  <div class="line"><span>По закату</span><div class="sw"></div></div>
+  <div class="line"><span>19:12 → 06:48</span><span class="mono" style="color:var(--mut)">30 мин</span></div>
+  <div class="line"><span>Яркость</span><span class="mono" style="color:var(--mut)">−20%</span></div>
+ </div>
+</div><h2>1. Сфера</h2><p>Свечение — это ползунок: тяни вверх и вниз</p></div>
+
+<div class="v"><div class="ph">
+ <div class="sb"><span>21:40</span><span>●●●</span></div>
+ <div class="bento">
+  <div class="tile a"><div class="glowdot"></div><span class="t">Сейчас</span><b class="mono">2700 K</b><span style="color:var(--mut);font-size:12px">тёплый · до 06:48</span></div>
+  <div class="tile"><span class="t">Закат</span><b class="mono">19:12</b></div>
+  <div class="tile"><span class="t">Рассвет</span><b class="mono">06:48</b></div>
+  <div class="tile"><span class="t">Яркость</span><b class="mono">−20%</b><div class="bar"><i style="width:60%"></i></div></div>
+  <div class="tile" style="display:flex;flex-direction:column;justify-content:space-between"><span class="t">Авто</span><div class="sw"></div></div>
+  <div class="tile a" style="display:flex;justify-content:space-between;align-items:center"><span>Исключения</span><span style="color:var(--mut)">3 приложения ›</span></div>
+ </div>
+</div><h2>2. Бенто</h2><p>Плитки разного размера, каждая — одна настройка</p></div>
+
+<div class="v"><div class="ph">
+ <div class="sb"><span>21:40</span><span>●●●</span></div>
+ <div class="t">Температура</div>
+ <div class="big mono" style="margin-top:6px">2700<span style="font-size:18px;color:var(--mut)"> K</span></div>
+ <div class="ruler">
+  <div class="tick" style="top:6%">6500</div><div class="tick" style="top:16%">5500</div>
+  <div class="tick" style="top:28%">4500</div><div class="tick" style="top:39%">3500</div>
+  <div class="tick m" style="top:48%">2700</div>
+  <div class="tick" style="top:60%">2000</div><div class="tick" style="top:71%">1500</div>
+  <div class="tick" style="top:82%">1000</div>
+ </div>
+ <div class="line" style="border-top:1px solid var(--line)"><span>По закату</span><div class="sw"></div></div>
+</div><h2>3. Линейка</h2><p>Шкала Кельвинов крутится, как диск камеры</p></div>
+
+<div class="v"><div class="ph">
+ <div class="sb"><span>21:40</span><span>●●●</span></div>
+ <div class="t">Сутки</div>
+ <div style="font-size:24px;font-weight:600;margin-top:4px">Тепло с 19:12</div>
+ <div class="day"><svg viewBox="0 0 250 150" preserveAspectRatio="none"><defs>
+  <linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff6a1f" stop-opacity=".7"/><stop offset="1" stop-color="#ff6a1f" stop-opacity="0"/></linearGradient></defs>
+  <path d="M0 40 L30 40 L50 125 L170 125 L190 40 L250 40 L250 150 L0 150Z" fill="url(#f)"/>
+  <path d="M0 40 L30 40 L50 125 L170 125 L190 40 L250 40" fill="none" stroke="#ffb23e" stroke-width="2.5"/>
+  <line x1="150" y1="0" x2="150" y2="150" stroke="#fff" stroke-dasharray="3 4" opacity=".5"/><circle cx="150" cy="125" r="6" fill="#fff"/></svg></div>
+ <div class="hours mono"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>
+ <div class="seg"><span>Дневной</span><span class="on">Тёплый</span><span>Свеча</span></div>
+ <div class="line" style="margin-top:6px"><span>Плавно</span><span class="mono" style="color:var(--mut)">30 мин</span></div>
+ <div class="line"><span>Включено</span><div class="sw"></div></div>
+</div><h2>4. График суток</h2><p>Видно, когда и как сильно греет фильтр</p></div>
+
+<div class="v"><div class="ph">
+ <div class="sb"><span>21:40</span><span>●●●</span></div>
+ <div class="t">Ember</div>
+ <div class="sentence">Включать <span class="w">на закате</span> и греть до <span class="w">2700 K</span>, выключать на <span class="w">рассвете</span>, приглушая на <span class="w mono">20%</span>.</div>
+ <div style="color:var(--mut);font-size:12px;margin-top:14px">Сейчас: 19:12 → 06:48 · плавно 30 мин</div>
+ <div class="fade"></div>
+ <div class="btn">Включить сейчас</div>
+</div><h2>5. Фраза</h2><p>Настройки как предложение: тапни слово, чтобы изменить</p></div>
+
+</div></body></html>
