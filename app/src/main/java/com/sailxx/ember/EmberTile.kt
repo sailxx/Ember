@@ -13,7 +13,7 @@ class EmberTile : TileService() {
 
     override fun onClick() {
         val c = Prefs.load(this).copy(enabled = !Prefs.load(this).enabled)
-        if (c.enabled && !Settings.canDrawOverlays(this)) return openApp()
+        if (c.enabled && !Settings.canDrawOverlays(this) && EmberAccessibility.instance == null) return openApp()
         Prefs.save(this, c)
         if (c.enabled && !FilterService.start(this)) openApp()
         refresh()

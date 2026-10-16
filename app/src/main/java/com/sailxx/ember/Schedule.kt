@@ -53,17 +53,19 @@ object Tint {
         return doubleArrayOf(r, g, b).map { it.roundToInt().coerceIn(0, 255) }.toIntArray()
     }
 
-    /** Android 12+ пропускает касания сквозь чужой оверлей, только если его прозрачность ≤ 0.8. */
-    const val MAX_ALPHA = 0.79f
+    /** Android 12+ пропускает касания сквозь обычный оверлей, только если его плотность ≤ 0.8. */
+    const val MAX_ALPHA = 0.75f
+    /** Окно службы спец. возможностей доверенное — ограничение только ради того, чтобы экран не стал чёрным. */
+    const val MAX_ALPHA_TRUSTED = 0.9f
 
     /**
      * Тёплый слой (альфа a) и чёрное затемнение (альфа b) складываются в одно окно:
      * экран·(1−A) + C·A, где A = 1−(1−a)(1−b), C = цвет·a·(1−b)/A.
      */
-    fun layer(c: Config, level: Float): Pair<Int, Float> {
-        val a = c.strength / 100f * 0.7f * level
-        var b = c.dim / 100f * 0.6f * level
-        if (1 - (1 - a) * (1 - b) > MAX_ALPHA) b = 1 - (1 - MAX_ALPHA) / (1 - a)
+    fun layer(c: Config, level: Float, max: Float = MAX_ALPHA): Pair<Int, Float> {
+        val a = (c.strength / 100f * 0.7f * level).coerceAtMost(max)
+        var b = c.dim / 100f * (if (max > MAX_ALPHA) 0.75f else 0.6f) * level
+        if (1 - (1 - a) * (1 - b) > max) b = 1 - (1 - max) / (1 - a)
         val alpha = 1 - (1 - a) * (1 - b)
         if (alpha <= 0.005f) return 0 to 0f
         val k = a * (1 - b) / alpha

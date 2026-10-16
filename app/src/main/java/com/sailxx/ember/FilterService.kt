@@ -9,13 +9,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.ServiceInfo
-import android.graphics.PixelFormat
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.provider.Settings
-import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
 import androidx.core.content.ContextCompat
@@ -68,11 +66,19 @@ class FilterService : Service(), SharedPreferences.OnSharedPreferenceChangeListe
         }
         val w = Schedule.window(c)
         val level = Schedule.level(c, Schedule.nowMinute(), w)
-        val (color, alpha) = Tint.layer(c, level)
-        if (alpha == 0f || !Settings.canDrawOverlays(this)) removeView() else showView(color, alpha)
+        val a11y = EmberAccessibility.instance
+        if (a11y != null) {
+            // Доверенное окно службы спец. возможностей: касания проходят всегда, плотность не ограничена 0.8.
+            removeView()
+            val (color, alpha) = Tint.layer(c, level, Tint.MAX_ALPHA_TRUSTED)
+            if (alpha == 0f) a11y.hide() else a11y.show(color, alpha)
+        } else {
+            val (color, alpha) = Tint.layer(c, level, Tint.MAX_ALPHA)
+            if (alpha == 0f || !Settings.canDrawOverlays(this)) removeView() else showView(color, alpha)
+        }
 
         val text = when {
-            !Settings.canDrawOverlays(this) -> "Нет разрешения «поверх других окон»"
+            a11y == null && !Settings.canDrawOverlays(this) -> "Нет разрешения «поверх других окон»"
             level >= 1f -> "${c.kelvin} K · до ${if (c.auto) Schedule.hhmm(w.end) else "выключения"}"
             level > 0f -> "${c.kelvin} K · ${(level * 100).toInt()}%"
             else -> "Ждёт заката в ${Schedule.hhmm(w.start)}"
@@ -86,40 +92,13 @@ class FilterService : Service(), SharedPreferences.OnSharedPreferenceChangeListe
     private fun showView(color: Int, alpha: Float) {
         val v = view ?: View(this).also { view = it }
         v.setBackgroundColor(color)
-        val p = params(alpha)
+        val p = Overlay.params(this, wm, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, alpha.coerceAtMost(Tint.MAX_ALPHA))
         if (v.parent == null) wm.addView(v, p) else wm.updateViewLayout(v, p)
     }
 
     private fun removeView() {
         view?.let { if (it.parent != null) wm.removeView(it) }
         view = null
-    }
-
-    private fun params(alpha: Float): WindowManager.LayoutParams {
-        // Окно больше экрана со сдвигом, чтобы перекрыть строку состояния, навигацию и вырез при любом повороте.
-        val b = if (Build.VERSION.SDK_INT >= 30) wm.maximumWindowMetrics.bounds.let { maxOf(it.width(), it.height()) }
-        else resources.displayMetrics.let { maxOf(it.widthPixels, it.heightPixels) }
-        val size = b + 2 * PAD
-        return WindowManager.LayoutParams(
-            size, size,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-            PixelFormat.TRANSLUCENT,
-        ).apply {
-            gravity = Gravity.TOP or Gravity.START
-            x = -PAD
-            y = -PAD
-            this.alpha = alpha.coerceAtMost(Tint.MAX_ALPHA)
-            if (Build.VERSION.SDK_INT >= 30) {
-                fitInsetsTypes = 0
-                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
-            } else if (Build.VERSION.SDK_INT >= 28) {
-                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-            }
-        }
     }
 
     private fun notification(text: String): Notification {
@@ -143,13 +122,13 @@ class FilterService : Service(), SharedPreferences.OnSharedPreferenceChangeListe
         handler.removeCallbacks(tick)
         Prefs.sp(this).unregisterOnSharedPreferenceChangeListener(this)
         removeView()
+        EmberAccessibility.instance?.hide()
         super.onDestroy()
     }
 
     companion object {
         private const val ID = 1
         private const val CHANNEL = "filter"
-        private const val PAD = 300
         private const val ACTION_OFF = "com.sailxx.ember.OFF"
 
         /** false — система не дала запустить сервис из фона. */

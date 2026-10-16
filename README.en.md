@@ -21,7 +21,7 @@
 
 ### 🔥 Filter
 
-A warm translucent layer covers the whole screen. **Strength** sets how dense it is, **dimming** makes the screen darker (handy at night instead of minimum brightness). Touches pass through the layer: its opacity stays at 80% or below, as Android 12+ requires.
+A warm translucent layer covers the whole screen. **Strength** sets how dense it is, **dimming** makes the screen darker (handy at night instead of minimum brightness). The layer is drawn by an accessibility service: the system treats its window as trusted, so touches pass through the filter everywhere, even on protected screens. Ember never reads the screen. Without the service the filter falls back to “Display over other apps”, where Android 12+ limits opacity and blocks taps on some screens.
 
 ### 🌅 Sun-based schedule
 
@@ -50,7 +50,8 @@ Ember has **no internet access** — the permission isn’t in the manifest. Coo
 
 1. Download [`Ember.apk`](https://github.com/sailxx/Ember/releases/latest/download/Ember.apk).
 2. Open it on your phone and allow installing from unknown sources.
-3. Launch Ember and grant “Display over other apps” — the filter can’t tint the screen without it.
+3. Launch Ember, tap the orange card and enable Ember in Accessibility — then touches always pass through the filter.
+   On Android 13+ for apps installed outside Play, first open App info → ⋮ → “Allow restricted settings”.
 4. Android 8.0 or newer.
 
 </details>

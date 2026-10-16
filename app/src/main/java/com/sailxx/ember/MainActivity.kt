@@ -99,19 +99,22 @@ private fun Screen() {
     val ctx = LocalContext.current
     var c by remember { mutableStateOf(Prefs.load(ctx)) }
     var canDraw by remember { mutableStateOf(Settings.canDrawOverlays(ctx)) }
+    var trusted by remember { mutableStateOf(EmberAccessibility.instance != null) }
+    val ready = canDraw || trusted
     var minute by remember { mutableIntStateOf(Schedule.nowMinute()) }
     var locating by remember { mutableStateOf(false) }
 
     fun set(n: Config) {
         c = n
         Prefs.save(ctx, n)
-        if (n.enabled && canDraw) FilterService.start(ctx)
+        if (n.enabled && ready) FilterService.start(ctx)
     }
 
     LifecycleResumeEffect(Unit) {
         canDraw = Settings.canDrawOverlays(ctx)
+        trusted = EmberAccessibility.instance != null
         c = Prefs.load(ctx)
-        if (c.enabled && canDraw) FilterService.start(ctx)
+        if (c.enabled && (canDraw || trusted)) FilterService.start(ctx)
         onPauseOrDispose {}
     }
     LaunchedEffect(Unit) {
@@ -154,25 +157,36 @@ private fun Screen() {
         Label("Сутки")
         Text(title, fontSize = 28.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 4.dp))
 
-        if (!canDraw) {
+        if (!trusted) {
             Box(
                 Modifier
                     .padding(top = 14.dp)
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(18.dp))
                     .background(Brush.linearGradient(listOf(Amber, EmberOrange)))
+                    .clickable { ctx.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
+                    .padding(16.dp)
+            ) {
+                Column {
+                    Text("Включите Ember в «Спец. возможностях»", color = Color(0xFF2A1000), fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Тогда кнопки под фильтром всегда нажимаются, а фильтр ложится и на строку состояния. " +
+                            "Ember не читает экран.",
+                        color = Color(0xB32A1000), fontSize = 13.sp,
+                    )
+                }
+            }
+            if (!canDraw) Text(
+                "Или разрешить «поверх других окон» — проще, но часть кнопок может не нажиматься",
+                color = Muted, fontSize = 12.sp,
+                modifier = Modifier
+                    .padding(top = 8.dp)
                     .clickable {
                         ctx.startActivity(
                             Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${ctx.packageName}"))
                         )
-                    }
-                    .padding(16.dp)
-            ) {
-                Column {
-                    Text("Разрешите «поверх других окон»", color = Color(0xFF2A1000), fontWeight = FontWeight.SemiBold)
-                    Text("Без него фильтр не может тонировать экран", color = Color(0xB32A1000), fontSize = 13.sp)
-                }
-            }
+                    },
+            )
         }
 
         DayChart(c, w, minute, Modifier.padding(top = 14.dp).fillMaxWidth().height(170.dp))
