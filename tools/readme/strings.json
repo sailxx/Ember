@@ -1,0 +1,56 @@
+{
+  "ru": {
+    "hero": {
+      "alt": "Ember — фильтр синего света для Android",
+      "title": ["Тёплый экран", "*после заката*"],
+      "sub": ["Ember убирает синий свет вечером и ночью —", "глазам легче, засыпать проще."],
+      "cards": [["По солнцу", "Закат и рассвет сами"], ["Плавно", "Переход за 30 минут"], ["Офлайн", "Без интернета"], ["Бесплатно", "Без рекламы"]],
+      "screen": { "label": "Сутки", "title": "Тепло с 19:12", "presets": ["Мягкий", "Тёплый", "Свеча"], "rows": ["По солнцу", "Включено"] }
+    },
+    "buttons": { "android": "Скачать для Android", "whatsNew": "Что нового" },
+    "features": {
+      "alt": "Возможности: фильтр, расписание, плитка, приватность", "chip": "Возможности", "title": "Тёплый свет — *когда он нужен*",
+      "items": [
+        ["Фильтр", ["Тёплый слой поверх всего экрана.", "Сила и затемнение — ползунками."]],
+        ["Расписание", ["Закат и рассвет считаются по месту.", "Фильтр разгорается и гаснет плавно."]],
+        ["Плитка", ["Вкл и выкл из шторки в одно касание.", "Кнопка «Выключить» в уведомлении."]],
+        ["Приватность", ["Нет доступа в интернет вообще.", "Место берётся один раз и не уходит."]]
+      ]
+    },
+    "presets": {
+      "alt": "Пресеты: Мягкий, Тёплый, Свеча, Ночь", "chip": "Пресеты", "title": "Четыре оттенка — *от мягкого до ночного*",
+      "cols": [["Мягкий", "3400 K"], ["Тёплый", "2700 K"], ["Свеча", "1900 K"], ["Ночь", "1200 K"]]
+    },
+    "numbers": {
+      "alt": "В цифрах: 1.2 МБ, 0 интернета, 0 рекламы, 4 пресета, 30 минут перехода", "chip": "В цифрах", "title": "Лёгкое, тихое *и приватное*",
+      "items": [["1.2", " МБ", ["размер APK"]], ["0", "", ["доступа", "в интернет"]], ["0", "", ["рекламы", "и трекеров"]], ["4", "", ["пресета", "температуры"]], ["30", " мин", ["плавный", "переход"]]]
+    }
+  },
+  "en": {
+    "hero": {
+      "alt": "Ember — blue light filter for Android",
+      "title": ["A warm screen", "*after sunset*"],
+      "sub": ["Ember removes blue light in the evening and at night —", "easier on the eyes, easier to fall asleep."],
+      "cards": [["Sun-based", "Sunset and sunrise"], ["Smooth", "30-minute fade"], ["Offline", "No internet"], ["Free", "No ads"]],
+      "screen": { "label": "Day", "title": "Warm from 19:12", "presets": ["Soft", "Warm", "Candle"], "rows": ["Follow the sun", "Enabled"] }
+    },
+    "buttons": { "android": "Download for Android", "whatsNew": "What’s new" },
+    "features": {
+      "alt": "Features: filter, schedule, tile, privacy", "chip": "Features", "title": "Warm light — *when you need it*",
+      "items": [
+        ["Filter", ["A warm layer over the whole screen.", "Strength and dimming on sliders."]],
+        ["Schedule", ["Sunset and sunrise for your location.", "The filter fades in and out smoothly."]],
+        ["Tile", ["On and off from Quick Settings.", "A “Turn off” button in the notification."]],
+        ["Privacy", ["No internet access at all.", "Location is read once and stays on the phone."]]
+      ]
+    },
+    "presets": {
+      "alt": "Presets: Soft, Warm, Candle, Night", "chip": "Presets", "title": "Four tones — *from soft to night*",
+      "cols": [["Soft", "3400 K"], ["Warm", "2700 K"], ["Candle", "1900 K"], ["Night", "1200 K"]]
+    },
+    "numbers": {
+      "alt": "By the numbers: 1.2 MB, no internet, 0 ads, 4 presets, 30-minute fade", "chip": "By the numbers", "title": "Light, quiet *and private*",
+      "items": [["1.2", " MB", ["APK size"]], ["0", "", ["internet", "access"]], ["0", "", ["ads", "and trackers"]], ["4", "", ["color", "presets"]], ["30", " min", ["smooth", "fade"]]]
+    }
+  }
+}
