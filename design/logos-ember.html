@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ember — уголёк</title>
+<style>
+*{box-sizing:border-box;margin:0}
+body{background:#0b0a09;color:#f5efe8;font:14px/1.4 system-ui,"Segoe UI",sans-serif;padding:32px 20px 60px}
+h1{font-size:22px;text-align:center}
+.sub{text-align:center;color:#8a8178;margin:6px 0 36px}
+.row{display:flex;flex-wrap:wrap;gap:40px;justify-content:center}
+.v{width:200px;text-align:center}
+.tile{width:200px;height:200px;border-radius:46px;overflow:hidden;border:1px solid #241e18}
+.tile svg,.sm svg{width:100%;height:100%;display:block}
+.smr{display:flex;gap:14px;justify-content:center;align-items:center;margin-top:14px}
+.sm{width:56px;height:56px;border-radius:50%;overflow:hidden;border:1px solid #241e18}
+.sm.s{width:32px;height:32px}
+.mono{width:32px;height:32px;border-radius:50%;background:#2a2622;display:grid;place-items:center}
+.mono svg{width:22px;height:22px}
+h2{font-size:15px;margin-top:14px}
+p{font-size:12px;color:#8a8178}
+</style></head><body>
+<h1>Ember — уголёк, 5 вариаций</h1>
+<p class="sub">Развитие первого логотипа: ядро + свечение</p>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+ <radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ff6a1f" stop-opacity=".75"/><stop offset="1" stop-color="#ff6a1f" stop-opacity="0"/></radialGradient>
+ <radialGradient id="core" cx=".5" cy=".42" r=".6"><stop offset="0" stop-color="#fff2d6"/><stop offset=".35" stop-color="#ffb23e"/><stop offset="1" stop-color="#ff6a1f"/></radialGradient>
+ <radialGradient id="hot" cx=".45" cy=".4" r=".65"><stop offset="0" stop-color="#fff6e4"/><stop offset=".25" stop-color="#ffc45a"/><stop offset=".6" stop-color="#ff6a1f"/><stop offset="1" stop-color="#4a1404"/></radialGradient>
+ <radialGradient id="bg" cx=".5" cy=".55" r=".75"><stop offset="0" stop-color="#2a0c02"/><stop offset="1" stop-color="#000"/></radialGradient>
+
+ <symbol id="a" viewBox="0 0 108 108"><rect width="108" height="108" fill="#000"/>
+  <circle cx="54" cy="54" r="46" fill="url(#glow)"/><circle cx="54" cy="54" r="22" fill="url(#hot)"/>
+  <path d="M42 50l7 3 4-6 6 5 7-2M47 62l6-3 5 4 6-3" fill="none" stroke="#5a1804" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/></symbol>
+
+ <symbol id="b" viewBox="0 0 108 108"><rect width="108" height="108" fill="#000"/>
+  <circle cx="54" cy="54" r="40" fill="none" stroke="#ff6a1f" stroke-opacity=".18" stroke-width="2"/>
+  <circle cx="54" cy="54" r="32" fill="none" stroke="#ff6a1f" stroke-opacity=".35" stroke-width="2"/>
+  <circle cx="54" cy="54" r="34" fill="url(#glow)"/><circle cx="54" cy="54" r="20" fill="url(#core)"/></symbol>
+
+ <symbol id="c" viewBox="0 0 108 108"><rect width="108" height="108" fill="#000"/>
+  <circle cx="54" cy="54" r="46" fill="url(#glow)"/>
+  <mask id="cm"><rect width="108" height="108" fill="#fff"/><circle cx="66" cy="44" r="19" fill="#000"/></mask>
+  <circle cx="54" cy="54" r="22" fill="url(#core)" mask="url(#cm)"/></symbol>
+
+ <symbol id="d" viewBox="0 0 108 108"><rect width="108" height="108" fill="url(#bg)"/>
+  <circle cx="54" cy="56" r="30" fill="url(#hot)"/>
+  <circle cx="54" cy="56" r="30" fill="none" stroke="#ffb23e" stroke-opacity=".25" stroke-width="1"/></symbol>
+
+ <symbol id="e" viewBox="0 0 108 108"><rect width="108" height="108" fill="#000"/>
+  <circle cx="54" cy="60" r="42" fill="url(#glow)"/><circle cx="54" cy="62" r="19" fill="url(#core)"/>
+  <circle cx="44" cy="34" r="2.6" fill="#ffb23e"/><circle cx="60" cy="28" r="1.8" fill="#ffd27a" opacity=".8"/>
+  <circle cx="67" cy="38" r="2.2" fill="#ff8a2a"/><circle cx="51" cy="22" r="1.3" fill="#ffd27a" opacity=".5"/></symbol>
+</defs></svg>
+
+<div class="row">
+ <div class="v"><div class="tile"><svg><use href="#a"/></svg></div>
+  <div class="smr"><div class="sm"><svg><use href="#a"/></svg></div><div class="sm s"><svg><use href="#a"/></svg></div>
+  <div class="mono"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="#fff"/><path d="M8 11l2 1 1.5-2 2 1.5 2-.5" fill="none" stroke="#2a2622" stroke-width="1.2" stroke-linecap="round"/></svg></div></div>
+  <h2>1. Тлеющий</h2><p>Тёмные трещины на раскалённом угле</p></div>
+
+ <div class="v"><div class="tile"><svg><use href="#b"/></svg></div>
+  <div class="smr"><div class="sm"><svg><use href="#b"/></svg></div><div class="sm s"><svg><use href="#b"/></svg></div>
+  <div class="mono"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.5" fill="#fff"/><circle cx="12" cy="12" r="8.5" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1.3"/><circle cx="12" cy="12" r="11" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="1"/></svg></div></div>
+  <h2>2. Ореолы</h2><p>Кольца тепла расходятся от ядра</p></div>
+
+ <div class="v"><div class="tile"><svg><use href="#c"/></svg></div>
+  <div class="smr"><div class="sm"><svg><use href="#c"/></svg></div><div class="sm s"><svg><use href="#c"/></svg></div>
+  <div class="mono"><svg viewBox="0 0 24 24"><path d="M15 6.2A7 7 0 1 0 18.7 15 6 6 0 0 1 15 6.2z" fill="#fff"/></svg></div></div>
+  <h2>3. Угасающий</h2><p>Тень наползает на уголёк — день уходит в ночь</p></div>
+
+ <div class="v"><div class="tile"><svg><use href="#d"/></svg></div>
+  <div class="smr"><div class="sm"><svg><use href="#d"/></svg></div><div class="sm s"><svg><use href="#d"/></svg></div>
+  <div class="mono"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#fff"/></svg></div></div>
+  <h2>4. Раскалённый шар</h2><p>Крупнее, без ореола, от белого к тёмно-красному</p></div>
+
+ <div class="v"><div class="tile"><svg><use href="#e"/></svg></div>
+  <div class="smr"><div class="sm"><svg><use href="#e"/></svg></div><div class="sm s"><svg><use href="#e"/></svg></div>
+  <div class="mono"><svg viewBox="0 0 24 24"><circle cx="12" cy="14" r="6" fill="#fff"/><circle cx="9" cy="5" r="1.2" fill="#fff"/><circle cx="14" cy="3.5" r="1" fill="#fff" opacity=".7"/><circle cx="16" cy="6.5" r="1.1" fill="#fff"/></svg></div></div>
+  <h2>5. Искры</h2><p>Уголёк и поднимающиеся искры</p></div>
+</div></body></html>
