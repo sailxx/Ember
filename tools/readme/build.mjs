@@ -53,8 +53,7 @@ const toggle = (x, y) => `<rect x="${x}" y="${y}" width="22" height="12" rx="6" 
 function phone(x, y, t, k = 1) {
   const sc = t.hero.screen;
   let s = `<rect width="150" height="228" rx="20" fill="#000" stroke="#2a2418"/>`;
-  s += `<text class="m" x="12" y="24" font-size="6" font-weight="600" letter-spacing=".8" fill="#8A8178">${T(sc.label.toUpperCase())}</text>`;
-  s += fitText(12, 42, sc.title, 126, { size: 14, weight: 800, fill: '#F5EFE8' });
+  s += fitText(12, 34, sc.title, 126, { size: 14, weight: 800, fill: '#F5EFE8' });
   // график суток
   const cx = 10, cw = 130, top = 58, bot = 112;
   const px = (m) => (cx + cw * m / DAY).toFixed(1), py = (l) => (bot - (bot - top) * l).toFixed(1);

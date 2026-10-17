@@ -11,12 +11,12 @@ data class Window(val start: Int, val end: Int)
 
 object Schedule {
     const val DAY = 1440
-    val DEFAULT = Window(21 * 60, 7 * 60)
-
+    /** По солнцу — закат и рассвет по месту; без места, в полярный день или ночь — своё время из настроек. */
     fun window(c: Config, date: LocalDate = LocalDate.now()): Window {
-        if (!c.hasPlace) return DEFAULT
-        val set = Sun.minutes(date, c.lat, c.lon, rising = false) ?: return DEFAULT
-        val rise = Sun.minutes(date, c.lat, c.lon, rising = true) ?: return DEFAULT
+        val own = Window(c.on, c.off)
+        if (!c.sun || !c.hasPlace) return own
+        val set = Sun.minutes(date, c.lat, c.lon, rising = false) ?: return own
+        val rise = Sun.minutes(date, c.lat, c.lon, rising = true) ?: return own
         return Window(set, rise)
     }
 

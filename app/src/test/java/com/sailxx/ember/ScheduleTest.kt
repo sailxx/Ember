@@ -40,4 +40,12 @@ class ScheduleTest {
         val (_, alpha) = Tint.layer(Config(strength = 100, dim = 100), 1f)
         assertTrue(alpha <= Tint.MAX_ALPHA + 1e-4f)
     }
+
+    @Test
+    fun ownTime() {
+        val c = Config(sun = false, on = 22 * 60 + 30, off = 6 * 60, lat = 55.75, lon = 37.62)
+        assertEquals(Window(22 * 60 + 30, 6 * 60), Schedule.window(c))
+        // По солнцу, но место не задано — тоже своё время
+        assertEquals(Window(21 * 60, 7 * 60), Schedule.window(Config()))
+    }
 }

@@ -5,14 +5,14 @@
       "title": ["Тёплый экран", "*после заката*"],
       "sub": ["Ember убирает синий свет вечером и ночью —", "глазам легче, засыпать проще."],
       "cards": [["По солнцу", "Закат и рассвет сами"], ["Плавно", "Переход за 30 минут"], ["Офлайн", "Без интернета"], ["Бесплатно", "Без рекламы"]],
-      "screen": { "label": "Сутки", "title": "Тепло с 19:12", "presets": ["Мягкий", "Тёплый", "Свеча"], "rows": ["По солнцу", "Включено"] }
+      "screen": { "title": "Тепло с 19:12", "presets": ["Мягкий", "Тёплый", "Свеча"], "rows": ["По солнцу", "Включено"] }
     },
     "buttons": { "android": "Скачать для Android", "whatsNew": "Что нового" },
     "features": {
       "alt": "Возможности: фильтр, расписание, плитка, приватность", "chip": "Возможности", "title": "Тёплый свет — *когда он нужен*",
       "items": [
         ["Фильтр", ["Тёплый слой поверх всего экрана.", "Сила и затемнение — ползунками."]],
-        ["Расписание", ["Закат и рассвет считаются по месту.", "Фильтр разгорается и гаснет плавно."]],
+        ["Расписание", ["По солнцу или в своё время.", "Фильтр разгорается и гаснет плавно."]],
         ["Плитка", ["Вкл и выкл из шторки в одно касание.", "Кнопка «Выключить» в уведомлении."]],
         ["Приватность", ["Нет доступа в интернет вообще.", "Место берётся один раз и не уходит."]]
       ]
@@ -32,14 +32,14 @@
       "title": ["A warm screen", "*after sunset*"],
       "sub": ["Ember removes blue light in the evening and at night —", "easier on the eyes, easier to fall asleep."],
       "cards": [["Sun-based", "Sunset and sunrise"], ["Smooth", "30-minute fade"], ["Offline", "No internet"], ["Free", "No ads"]],
-      "screen": { "label": "Day", "title": "Warm from 19:12", "presets": ["Soft", "Warm", "Candle"], "rows": ["Follow the sun", "Enabled"] }
+      "screen": { "title": "Warm from 19:12", "presets": ["Soft", "Warm", "Candle"], "rows": ["Follow the sun", "Enabled"] }
     },
     "buttons": { "android": "Download for Android", "whatsNew": "What’s new" },
     "features": {
       "alt": "Features: filter, schedule, tile, privacy", "chip": "Features", "title": "Warm light — *when you need it*",
       "items": [
         ["Filter", ["A warm layer over the whole screen.", "Strength and dimming on sliders."]],
-        ["Schedule", ["Sunset and sunrise for your location.", "The filter fades in and out smoothly."]],
+        ["Schedule", ["By the sun or at your own times.", "The filter fades in and out smoothly."]],
         ["Tile", ["On and off from Quick Settings.", "A “Turn off” button in the notification."]],
         ["Privacy", ["No internet access at all.", "Location is read once and stays on the phone."]]
       ]

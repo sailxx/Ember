@@ -81,7 +81,8 @@ class FilterService : Service(), SharedPreferences.OnSharedPreferenceChangeListe
             a11y == null && !Settings.canDrawOverlays(this) -> "Нет разрешения «поверх других окон»"
             level >= 1f -> "${c.kelvin} K · до ${if (c.auto) Schedule.hhmm(w.end) else "выключения"}"
             level > 0f -> "${c.kelvin} K · ${(level * 100).toInt()}%"
-            else -> "Ждёт заката в ${Schedule.hhmm(w.start)}"
+            c.sun && c.hasPlace -> "Ждёт заката в ${Schedule.hhmm(w.start)}"
+            else -> "Включится в ${Schedule.hhmm(w.start)}"
         }
         if (text != lastText) {
             lastText = text

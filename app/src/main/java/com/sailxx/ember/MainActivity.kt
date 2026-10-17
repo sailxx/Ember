@@ -1,10 +1,8 @@
 package com.sailxx.ember
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.location.Location
 import android.location.LocationManager
 import android.net.Uri
 import android.os.Build
@@ -32,6 +30,8 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -39,7 +39,11 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -64,7 +68,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import kotlinx.coroutines.delay
@@ -128,12 +131,33 @@ private fun Screen() {
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= 33) notify.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
-    val place = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
-        if (!ok) return@rememberLauncherForActivityResult
+    var placeNote by remember { mutableStateOf<String?>(null) }
+    var picking by remember { mutableStateOf<String?>(null) } // "on" / "off"
+    val place = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { res ->
+        if (res.values.none { it }) {
+            placeNote = "Нет доступа к местоположению — нажмите, чтобы открыть настройки Ember"
+            return@rememberLauncherForActivityResult
+        }
         locating = true
-        locate(ctx) { loc ->
+        placeNote = null
+        Place.locate(ctx) { loc, err ->
             locating = false
+            placeNote = when (err) {
+                Place.Error.OFF -> "Геолокация выключена — включите её и нажмите ещё раз"
+                Place.Error.NO_FIX -> "Не удалось определить место. Попробуйте ещё раз или задайте время вручную"
+                null -> null
+            }
             if (loc != null) set(c.copy(lat = loc.latitude, lon = loc.longitude))
+        }
+    }
+    fun onPlaceClick() {
+        val lm = ctx.getSystemService(LocationManager::class.java)
+        when {
+            placeNote?.startsWith("Нет доступа") == true -> ctx.startActivity(
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${ctx.packageName}"))
+            ).also { placeNote = null }
+            !LocationManagerCompat.isLocationEnabled(lm) -> ctx.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+            else -> place.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
         }
     }
 
@@ -154,8 +178,7 @@ private fun Screen() {
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
-        Label("Сутки")
-        Text(title, fontSize = 28.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 4.dp))
+        Text(title, fontSize = 28.sp, fontWeight = FontWeight.SemiBold)
 
         if (!trusted) {
             Box(
@@ -218,20 +241,98 @@ private fun Screen() {
         SliderRow("Сила", "${c.strength}%", c.strength) { set(c.copy(strength = it)) }
         SliderRow("Затемнение", "${c.dim}%", c.dim) { set(c.copy(dim = it)) }
 
-        Spacer(Modifier.height(8.dp))
-        SettingRow("По солнцу") { EmberSwitch(c.auto) { set(c.copy(auto = it)) } }
-        if (c.auto) {
+        Spacer(Modifier.height(20.dp))
+        Label("Расписание")
+        Chips(
+            listOf("По солнцу", "По времени", "Всегда"),
+            selected = if (!c.auto) 2 else if (c.sun) 0 else 1,
+            modifier = Modifier.padding(top = 10.dp, bottom = 4.dp),
+        ) { i -> set(c.copy(auto = i != 2, sun = i == 0)) }
+        if (c.auto && c.sun) {
             SettingRow(
-                if (c.hasPlace) "Закат → рассвет" else "По умолчанию",
-                sub = if (locating) "Определяю место…" else if (c.hasPlace) "По вашему месту" else "Нажмите, чтобы взять время заката",
-                onClick = { place.launch(Manifest.permission.ACCESS_COARSE_LOCATION) },
-            ) { Text("${Schedule.hhmm(w.start)} → ${Schedule.hhmm(w.end)}", color = Muted, fontFamily = Mono) }
+                "Место",
+                sub = when {
+                    locating -> "Определяю…"
+                    placeNote != null -> placeNote
+                    c.hasPlace -> "%.2f, %.2f · закат и рассвет по нему".format(c.lat, c.lon)
+                    else -> "Не задано — пока работает по времени ниже"
+                },
+                onClick = ::onPlaceClick,
+            ) { Text(if (c.hasPlace) "Обновить" else "Определить", color = Amber) }
+            if (c.hasPlace) SettingRow("Закат → рассвет") {
+                Text("${Schedule.hhmm(w.start)} → ${Schedule.hhmm(w.end)}", color = Muted, fontFamily = Mono)
+            }
+        }
+        if (c.auto && (!c.sun || !c.hasPlace)) {
+            SettingRow("Включать", onClick = { picking = "on" }) { Text(Schedule.hhmm(c.on), color = Amber, fontFamily = Mono) }
+            SettingRow("Выключать", onClick = { picking = "off" }) { Text(Schedule.hhmm(c.off), color = Amber, fontFamily = Mono) }
+        }
+        if (c.auto) {
             SettingRow("Плавно", onClick = {
                 set(c.copy(fade = fades[(fades.indexOf(c.fade) + 1).mod(fades.size)]))
             }) { Text(if (c.fade == 0) "сразу" else "${c.fade} мин", color = Muted, fontFamily = Mono) }
         }
         SettingRow("Включено", divider = false) { EmberSwitch(c.enabled) { set(c.copy(enabled = it)) } }
     }
+
+    picking?.let { which ->
+        TimeDialog(
+            title = if (which == "on") "Включать в" else "Выключать в",
+            minute = if (which == "on") c.on else c.off,
+            onDismiss = { picking = null },
+        ) { m ->
+            picking = null
+            set(if (which == "on") c.copy(on = m) else c.copy(off = m))
+        }
+    }
+}
+
+@Composable
+private fun Chips(items: List<String>, selected: Int, modifier: Modifier = Modifier, onPick: (Int) -> Unit) {
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        items.forEachIndexed { i, name ->
+            val on = i == selected
+            Box(
+                Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(if (on) Amber.copy(alpha = .14f) else Color.Transparent)
+                    .border(1.dp, if (on) Color(0xFF6A4A1C) else Line, RoundedCornerShape(12.dp))
+                    .clickable { onPick(i) }
+                    .padding(vertical = 11.dp),
+                contentAlignment = Alignment.Center,
+            ) { Text(name, color = if (on) Amber else Muted, fontSize = 13.sp) }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimeDialog(title: String, minute: Int, onDismiss: () -> Unit, onPick: (Int) -> Unit) {
+    val st = rememberTimePickerState(initialHour = minute / 60, initialMinute = minute % 60, is24Hour = true)
+    val panel = Color(0xFF1D1813)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF14110E),
+        title = { Text(title, color = Text0) },
+        text = {
+            TimePicker(
+                st,
+                colors = TimePickerDefaults.colors(
+                    clockDialColor = panel,
+                    clockDialSelectedContentColor = Color(0xFF2A1000),
+                    clockDialUnselectedContentColor = Text0,
+                    selectorColor = Amber,
+                    timeSelectorSelectedContainerColor = Amber.copy(alpha = .18f),
+                    timeSelectorSelectedContentColor = Amber,
+                    timeSelectorUnselectedContainerColor = panel,
+                    timeSelectorUnselectedContentColor = Text0,
+                ),
+            )
+        },
+        confirmButton = { TextButton(onClick = { onPick(st.hour * 60 + st.minute) }) { Text("Готово", color = Amber) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена", color = Muted) } },
+    )
 }
 
 @Composable
@@ -320,15 +421,3 @@ private fun EmberSwitch(checked: Boolean, onChange: (Boolean) -> Unit) = Switch(
         uncheckedThumbColor = Muted, uncheckedTrackColor = Color.Black, uncheckedBorderColor = Line,
     ),
 )
-
-@SuppressLint("MissingPermission")
-private fun locate(ctx: Context, done: (Location?) -> Unit) {
-    val lm = ctx.getSystemService(LocationManager::class.java)
-    val last = lm.getProviders(true).mapNotNull { runCatching { lm.getLastKnownLocation(it) }.getOrNull() }.maxByOrNull { it.time }
-    if (last != null) return done(last)
-    val provider = listOf(LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER).firstOrNull { lm.isProviderEnabled(it) }
-        ?: return done(null)
-    LocationManagerCompat.getCurrentLocation(
-        lm, provider, null as android.os.CancellationSignal?, ContextCompat.getMainExecutor(ctx),
-    ) { done(it) }
-}

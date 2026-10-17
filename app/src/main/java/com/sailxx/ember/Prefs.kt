@@ -8,6 +8,9 @@ import android.service.quicksettings.TileService
 data class Config(
     val enabled: Boolean = false,
     val auto: Boolean = true,
+    val sun: Boolean = true,      // false — своё время включения и выключения
+    val on: Int = 21 * 60,        // минуты от полуночи
+    val off: Int = 7 * 60,
     val kelvin: Int = 2700,
     val strength: Int = 60, // 0..100 — насколько плотный тёплый слой
     val dim: Int = 0,       // 0..100 — дополнительное затемнение
@@ -25,6 +28,9 @@ object Prefs {
         Config(
             enabled = getBoolean("enabled", false),
             auto = getBoolean("auto", true),
+            sun = getBoolean("sun", true),
+            on = getInt("on", 21 * 60),
+            off = getInt("off", 7 * 60),
             kelvin = getInt("kelvin", 2700),
             strength = getInt("strength", 60),
             dim = getInt("dim", 0),
@@ -38,6 +44,9 @@ object Prefs {
         sp(ctx).edit()
             .putBoolean("enabled", c.enabled)
             .putBoolean("auto", c.auto)
+            .putBoolean("sun", c.sun)
+            .putInt("on", c.on)
+            .putInt("off", c.off)
             .putInt("kelvin", c.kelvin)
             .putInt("strength", c.strength)
             .putInt("dim", c.dim)
