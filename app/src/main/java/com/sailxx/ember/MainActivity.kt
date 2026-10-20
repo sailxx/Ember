@@ -13,7 +13,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -54,6 +60,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -66,6 +74,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.location.LocationManagerCompat
@@ -178,16 +187,20 @@ private fun Screen() {
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
-        Text(title, fontSize = 28.sp, fontWeight = FontWeight.SemiBold)
+        Text(title, fontSize = 34.sp, lineHeight = 38.sp, letterSpacing = (-0.8).sp, fontWeight = FontWeight.SemiBold, color = Text0)
 
         if (!trusted) {
+            val bannerSrc = remember { MutableInteractionSource() }
             Box(
                 Modifier
                     .padding(top = 14.dp)
                     .fillMaxWidth()
+                    .pressScale(bannerSrc)
                     .clip(RoundedCornerShape(18.dp))
                     .background(Brush.linearGradient(listOf(Amber, EmberOrange)))
-                    .clickable { ctx.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
+                    .clickable(bannerSrc, LocalIndication.current, role = Role.Button) {
+                        ctx.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                    }
                     .padding(16.dp)
             ) {
                 Column {
@@ -220,20 +233,9 @@ private fun Screen() {
         Row(Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             presets.forEach { (name, k) ->
                 val on = c.kelvin == k
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (on) Amber.copy(alpha = .14f) else Color.Transparent)
-                        .border(1.dp, if (on) Color(0xFF6A4A1C) else Line, RoundedCornerShape(12.dp))
-                        .clickable { set(c.copy(kelvin = k)) }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(name, color = if (on) Amber else Muted, fontSize = 13.sp)
-                        Text("$k K", color = if (on) Amber.copy(alpha = .7f) else Muted.copy(alpha = .6f), fontSize = 10.sp, fontFamily = Mono)
-                    }
+                Chip(Modifier.weight(1f), on, 10.dp, { set(c.copy(kelvin = k)) }) {
+                    Text(name, color = if (on) Amber else Muted, fontSize = 13.sp)
+                    Text("$k K", color = if (on) Amber.copy(alpha = .75f) else Muted.copy(alpha = .75f), fontSize = 11.sp, fontFamily = Mono)
                 }
             }
         }
@@ -292,18 +294,35 @@ private fun Chips(items: List<String>, selected: Int, modifier: Modifier = Modif
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         items.forEachIndexed { i, name ->
             val on = i == selected
-            Box(
-                Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (on) Amber.copy(alpha = .14f) else Color.Transparent)
-                    .border(1.dp, if (on) Color(0xFF6A4A1C) else Line, RoundedCornerShape(12.dp))
-                    .clickable { onPick(i) }
-                    .padding(vertical = 11.dp),
-                contentAlignment = Alignment.Center,
-            ) { Text(name, color = if (on) Amber else Muted, fontSize = 13.sp) }
+            Chip(Modifier.weight(1f), on, 12.dp, { onPick(i) }) {
+                Text(name, color = if (on) Amber else Muted, fontSize = 13.sp)
+            }
         }
     }
+}
+
+@Composable
+private fun Modifier.pressScale(src: MutableInteractionSource): Modifier {
+    val pressed by src.collectIsPressedAsState()
+    val k by animateFloatAsState(if (pressed) 0.97f else 1f, label = "press")
+    return graphicsLayer { scaleX = k; scaleY = k }
+}
+
+@Composable
+private fun Chip(modifier: Modifier, on: Boolean, vPad: Dp, onClick: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+    val src = remember { MutableInteractionSource() }
+    val bg by animateColorAsState(if (on) Amber.copy(alpha = .14f) else Color.Transparent, label = "chipBg")
+    val edge by animateColorAsState(if (on) Color(0xFF6A4A1C) else Line, label = "chipEdge")
+    Box(
+        modifier
+            .pressScale(src)
+            .clip(RoundedCornerShape(12.dp))
+            .background(bg)
+            .border(1.dp, edge, RoundedCornerShape(12.dp))
+            .clickable(src, LocalIndication.current, role = Role.RadioButton, onClick = onClick)
+            .padding(vertical = vPad),
+        contentAlignment = Alignment.Center,
+    ) { Column(horizontalAlignment = Alignment.CenterHorizontally, content = content) }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -358,6 +377,7 @@ private fun DayChart(c: Config, w: Window, minute: Int, modifier: Modifier) {
             lineTo(0f, size.height)
             close()
         }
+        for (h in 6..18 step 6) drawLine(Line, Offset(x(h * 60), top), Offset(x(h * 60), bottom), 1.dp.toPx())
         drawLine(Line, Offset(0f, bottom), Offset(size.width, bottom), 1.dp.toPx())
         drawPath(area, Brush.verticalGradient(listOf(fill.copy(alpha = .55f), fill.copy(alpha = 0f)), top, size.height))
         drawPath(line, stroke, style = Stroke(2.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
@@ -367,13 +387,15 @@ private fun DayChart(c: Config, w: Window, minute: Int, modifier: Modifier) {
             Color.White.copy(alpha = .5f), Offset(nx, 0f), Offset(nx, size.height), 1.dp.toPx(),
             pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 8f)),
         )
-        drawCircle(Color.White, 5.dp.toPx(), Offset(nx, y(Schedule.level(shape, minute, w))))
+        val ny = y(Schedule.level(shape, minute, w))
+        drawCircle(stroke.copy(alpha = .25f), 11.dp.toPx(), Offset(nx, ny))
+        drawCircle(Color.White, 5.dp.toPx(), Offset(nx, ny))
     }
 }
 
 @Composable
 private fun Label(text: String) =
-    Text(text.uppercase(), color = Muted, fontSize = 11.sp, letterSpacing = 1.2.sp)
+    Text(text, color = Muted, fontSize = 13.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.2.sp)
 
 @Composable
 private fun SliderRow(name: String, value: String, v: Int, onChange: (Int) -> Unit) {
