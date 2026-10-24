@@ -5,3 +5,6 @@ build/
 local.properties
 .idea/
 node_modules/
+
+# Ключ подписи
+keystore.properties
