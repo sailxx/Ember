@@ -1,5 +1,9 @@
 <div align="center">
 
+[Русский](README.ru.md) · **English**
+
+<br>
+
 <img src="assets/readme/hero-en.svg" width="100%" alt="Ember — blue light filter for Android">
 
 <a href="https://github.com/sailxx/Ember/releases/latest/download/Ember.apk"><img src="assets/readme/btn-android-en.svg" height="52" alt="Download for Android"></a>&nbsp;&nbsp;<a href="https://github.com/sailxx/Ember/releases/latest"><img src="assets/readme/btn-new-en.svg" height="52" alt="What’s new"></a>
