@@ -1,90 +1,67 @@
 <div align="center">
 
-**Русский** · [English](README.en.md)
+<img src="assets/readme/hero-en.svg" width="100%" alt="Ember — blue light filter for Android">
 
-<br>
+<a href="https://github.com/sailxx/Ember/releases/latest/download/Ember.apk"><img src="assets/readme/btn-android-en.svg" height="52" alt="Download for Android"></a>&nbsp;&nbsp;<a href="https://github.com/sailxx/Ember/releases/latest"><img src="assets/readme/btn-new-en.svg" height="52" alt="What’s new"></a>
 
-<img src="assets/readme/hero-ru.svg" width="100%" alt="Ember — фильтр синего света для Android">
-
-<a href="https://github.com/sailxx/Ember/releases/latest/download/Ember.apk"><img src="assets/readme/btn-android-ru.svg" height="52" alt="Скачать для Android"></a>&nbsp;&nbsp;<a href="https://github.com/sailxx/Ember/releases/latest"><img src="assets/readme/btn-new-ru.svg" height="52" alt="Что нового"></a>
-
-**Ember — фильтр синего света для Android.** Вечером экран становится тёплым, а утром — снова обычным. Ember сам считает закат и рассвет, работает без интернета и рекламы.
+**Ember is a blue light filter for Android.** In the evening the screen turns warm, in the morning it goes back to normal. Ember works out sunset and sunrise on its own, with no internet and no ads.
 
 </div>
 
 <br>
 
-<img src="assets/readme/features-ru.svg" width="100%" alt="Возможности: фильтр, расписание, плитка, приватность">
+<img src="assets/readme/features-en.svg" width="100%" alt="Features: filter, schedule, tile, privacy">
 
 <details>
-<summary><b>Подробнее о возможностях</b></summary>
+<summary><b>More about the features</b></summary>
 
-### 🔥 Фильтр
+### 🔥 Filter
 
-Поверх всего экрана лежит тёплый полупрозрачный слой. **Сила** задаёт, насколько он плотный, **затемнение** — насколько темнее станет экран (удобно ночью вместо минимальной яркости). Слой рисует служба специальных возможностей: её окно система считает доверенным, поэтому касания проходят сквозь фильтр везде, даже на защищённых экранах. Экран Ember не читает. Без службы фильтр работает через «Поверх других окон», но тогда Android 12+ ограничивает плотность и на части экранов блокирует нажатия.
+A warm translucent layer covers the whole screen. **Strength** sets how dense it is, **dimming** makes the screen darker (handy at night instead of minimum brightness). The layer is drawn by an accessibility service: the system treats its window as trusted, so touches pass through the filter everywhere, even on protected screens. Ember never reads the screen. Without the service the filter falls back to “Display over other apps”, where Android 12+ limits opacity and blocks taps on some screens.
 
-### 🌅 Расписание
+### 🌅 Schedule
 
-Три режима: **По солнцу** — нажми «Определить» у строки «Место», Ember один раз возьмёт координаты и будет считать закат и рассвет на каждый день (алгоритм NOAA, прямо на телефоне); **По времени** — своё время включения и выключения; **Всегда** — фильтр горит, пока включён. Пока место не задано, режим «По солнцу» работает по своему времени (по умолчанию 21:00–07:00). Переход длится 0, 15, 30 или 60 минут. График на главном экране показывает, когда и насколько сильно греет фильтр.
+Three modes: **By the sun** — tap “Locate” next to “Place”, Ember reads your coordinates once and calculates sunset and sunrise for every day (NOAA algorithm, right on the phone); **By time** — your own on and off times; **Always** — the filter stays on while enabled. Until a place is set, “By the sun” uses your own times (21:00–07:00 by default). The fade lasts 0, 15, 30 or 60 minutes. The chart on the main screen shows when and how strongly the filter warms the screen.
 
-### 🎛 Плитка и уведомление
+### 🎛 Tile and notification
 
-Плитка Ember в шторке включает и выключает фильтр в одно касание. В уведомлении видно, что сейчас происходит («2700 K · до 06:48» или «Ждёт заката»), и есть кнопка «Выключить». После перезагрузки фильтр включается сам.
+The Ember tile in Quick Settings turns the filter on and off with one tap. The notification shows what’s happening (“2700 K · until 06:48” or “Waiting for sunset”) and has a “Turn off” button. After a reboot the filter comes back on its own.
 
-### 🔒 Приватность
+### 🔒 Privacy
 
-У Ember **нет доступа в интернет** — в манифесте нет этого разрешения. Координаты хранятся только в настройках приложения.
+Ember has **no internet access** — the permission isn’t in the manifest. Coordinates are stored only in the app’s settings.
 
 </details>
 
 <br>
 
-<img src="assets/readme/presets-ru.svg" width="100%" alt="Пресеты: Мягкий, Тёплый, Свеча, Ночь">
+<img src="assets/readme/presets-en.svg" width="100%" alt="Presets: Soft, Warm, Candle, Night">
 
 <br>
 
-<img src="assets/readme/numbers-ru.svg" width="100%" alt="В цифрах: 1.2 МБ, 0 интернета, 0 рекламы, 4 пресета, 30 минут перехода">
+<img src="assets/readme/numbers-en.svg" width="100%" alt="By the numbers: 1.2 MB, no internet, 0 ads, 4 presets, 30-minute fade">
 
 <details>
-<summary><b>Установка</b></summary>
+<summary><b>Install</b></summary>
 
-1. Скачай [`Ember.apk`](https://github.com/sailxx/Ember/releases/latest/download/Ember.apk).
-2. Открой файл на телефоне и разреши установку из неизвестных источников.
-3. Запусти Ember и нажми оранжевую карточку → включи Ember в «Спец. возможностях». Так касания всегда проходят сквозь фильтр.
-   На Android 13+ для приложений не из Play Маркета сначала открой «О приложении» → ⋮ → «Разрешить ограниченные настройки».
-4. Android 8.0 и новее.
+1. Download [`Ember.apk`](https://github.com/sailxx/Ember/releases/latest/download/Ember.apk).
+2. Open it on your phone and allow installing from unknown sources.
+3. Launch Ember, tap the orange card and enable Ember in Accessibility — then touches always pass through the filter.
+   On Android 13+ for apps installed outside Play, first open App info → ⋮ → “Allow restricted settings”.
+4. Android 8.0 or newer.
 
 </details>
 
 <details>
-<summary><b>Разработка</b></summary>
+<summary><b>Development</b></summary>
 
-Kotlin 2.2 + Jetpack Compose (Material 3), без сторонних зависимостей.
-
-```bash
-./gradlew assembleRelease     # APK в app/build/outputs/apk/release/
-./gradlew testDebugUnitTest   # закат, рассвет и кривая фильтра
-```
-
-Нужны JDK 17+ и Android SDK (platform 35).
-
-Картинки README генерируются (тексты — в `tools/readme/strings.json`), не правь SVG руками:
+Kotlin 2.2 + Jetpack Compose (Material 3), no third-party dependencies.
 
 ```bash
-cd tools/readme && npm install && node build.mjs
+./gradlew assembleRelease     # APK in app/build/outputs/apk/release/
+./gradlew testDebugUnitTest   # sunset, sunrise and the filter curve
 ```
 
-```
-app/src/main/java/com/sailxx/ember/
-├── MainActivity.kt   — экран «График суток»
-├── FilterService.kt  — оверлей поверх экрана, пересчёт раз в 30 секунд
-├── Schedule.kt       — окно заката–рассвета, плавность, цвет из Кельвинов
-├── Sun.kt            — восход и закат по координатам (NOAA)
-├── EmberTile.kt      — плитка в шторке
-├── BootReceiver.kt   — автозапуск после перезагрузки
-└── Prefs.kt          — настройки
-```
-
-Шрифты Golos Text и JetBrains Mono в картинках README — SIL Open Font License 1.1.
+Requires JDK 17+ and Android SDK (platform 35). README images are generated — edit `tools/readme/strings.json` and run `cd tools/readme && npm install && node build.mjs`.
 
 </details>
