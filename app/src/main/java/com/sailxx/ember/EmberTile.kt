@@ -9,13 +9,16 @@ import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 
 class EmberTile : TileService() {
+    override fun onTileAdded() = refresh()
+
     override fun onStartListening() = refresh()
 
     override fun onClick() {
-        val c = Prefs.load(this).copy(enabled = !Prefs.load(this).enabled)
-        if (c.enabled && !Settings.canDrawOverlays(this) && EmberAccessibility.instance == null) return openApp()
-        Prefs.save(this, c)
-        if (c.enabled && !FilterService.start(this)) openApp()
+        val next = Prefs.update(this) { copy(enabled = !enabled) }
+        if (next.enabled) {
+            val canShowOverlay = EmberAccessibility.instance != null || Settings.canDrawOverlays(this)
+            if (!canShowOverlay || !FilterService.start(this)) openApp()
+        }
         refresh()
     }
 

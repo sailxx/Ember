@@ -29,14 +29,41 @@ object Schedule {
         val len = (w.end - w.start).mod(DAY)
         val pos = (minute - w.start).mod(DAY)
         val f = c.fade
+        val fadeOut = minOf(f, DAY - len)
         return when {
             pos < len -> if (f == 0) 1f else minOf(1f, pos.toFloat() / f)
-            f > 0 && pos < len + f -> 1f - (pos - len).toFloat() / f
+            fadeOut > 0 && pos < len + fadeOut ->
+                minOf(1f, len.toFloat() / f) * (1f - (pos - len).toFloat() / fadeOut)
             else -> 0f
         }
     }
 
     fun hhmm(minute: Int) = "%02d:%02d".format(minute / 60, minute % 60)
+}
+
+data class FilterState(val text: String, val color: Int = 0, val alpha: Float = 0f) {
+    companion object {
+        fun current(c: Config, minute: Int, w: Window, trusted: Boolean, canDraw: Boolean): FilterState {
+            if (!c.enabled) return FilterState("Выключено")
+            if (!trusted && !canDraw) return FilterState("Нужно разрешение")
+            if (c.strength == 0 && c.dim == 0) return FilterState("Сила и затемнение — 0%")
+            if (c.auto && w.start == w.end) return FilterState("Время включения и выключения совпадает")
+
+            val level = Schedule.level(c, minute, w)
+            if (level == 0f) return FilterState("Тепло с ${Schedule.hhmm(w.start)}")
+
+            val maxAlpha = if (trusted) Tint.MAX_ALPHA_TRUSTED else Tint.MAX_ALPHA
+            val (color, alpha) = Tint.layer(c, level, maxAlpha)
+            if (alpha == 0f) return FilterState("Плавный переход")
+
+            val text = when {
+                level < 1f -> "${c.kelvin} K · ${(level * 100).toInt()}%"
+                c.auto -> "${c.kelvin} K · до ${Schedule.hhmm(w.end)}"
+                else -> "${c.kelvin} K · фильтр активен"
+            }
+            return FilterState(text, color, alpha)
+        }
+    }
 }
 
 object Tint {

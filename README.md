@@ -64,8 +64,15 @@ Kotlin 2.2 + Jetpack Compose (Material 3), no third-party dependencies.
 ```bash
 ./gradlew assembleRelease     # APK in app/build/outputs/apk/release/
 ./gradlew testDebugUnitTest   # sunset, sunrise and the filter curve
+./gradlew lintDebug           # Android Lint checks
 ```
 
 Requires JDK 17+ and Android SDK (platform 35). README images are generated — edit `tools/readme/strings.json` and run `cd tools/readme && npm install && node build.mjs`.
+
+Before releasing, check these steps on a device in Always mode:
+
+1. Tap the Quick Settings tile with both overlay permissions off. Grant either one and return to Ember. The filter should appear without tapping the tile again.
+2. Toggle the filter from Quick Settings, then turn it off from the notification. Ember and the tile should agree. Changing the strength should leave the filter off.
+3. Reboot with the filter enabled. After unlocking, the filter should return. Repeat with the accessibility service and with the display-over-other-apps permission separately.
 
 </details>

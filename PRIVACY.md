@@ -4,7 +4,7 @@
 
 ## Русский
 
-**Данные.** Настройки фильтра и, если вы нажали «Определить», координаты места (считываются один раз для расчёта заката и рассвета на самом телефоне). Всё хранится только в настройках приложения на устройстве.
+**Данные.** Настройки фильтра и, если вы нажали «Определить», координаты места (считываются один раз для расчёта заката и рассвета на самом телефоне). Они хранятся на устройстве в настройках приложения, исключённых из резервного копирования и переноса через Android.
 
 **Интернет.** Разрешения на интернет нет — приложение ничего не отправляет и не получает.
 
@@ -20,7 +20,7 @@
 
 ## English
 
-**Data.** Filter settings and, if you tap "Locate", your coordinates (read once to compute sunset and sunrise on the phone itself). Everything is stored only in the app's settings on your device.
+**Data.** Filter settings and, if you tap "Locate", your coordinates (read once to compute sunset and sunrise on the phone itself). They are stored on your device in app settings excluded from Android backup and device transfer.
 
 **Internet.** The app has no internet permission, so it sends and receives nothing.
 

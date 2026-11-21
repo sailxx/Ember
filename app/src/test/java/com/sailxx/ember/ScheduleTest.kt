@@ -36,6 +36,53 @@ class ScheduleTest {
     }
 
     @Test
+    fun shortWindowDoesNotJumpToFullStrength() {
+        val c = Config(enabled = true, fade = 30)
+        for (start in listOf(600, 1435)) {
+            val w = Window(start, (start + 10) % Schedule.DAY)
+            val before = Schedule.level(c, (start + 9) % Schedule.DAY, w)
+            val peak = Schedule.level(c, (start + 10) % Schedule.DAY, w)
+            assertTrue(peak - before < 0.04f)
+            assertEquals(1f / 3f, peak, 0.0001f)
+            assertEquals(1f / 6f, Schedule.level(c, (start + 25) % Schedule.DAY, w), 0.0001f)
+            assertEquals(0f, Schedule.level(c, (start + 40) % Schedule.DAY, w))
+        }
+        assertEquals(0f, Schedule.level(c, 600, Window(600, 600)))
+        assertEquals(1f, Schedule.level(c.copy(fade = 0), 605, Window(600, 610)))
+    }
+
+    @Test
+    fun longWindowFadesOutBeforeNextStart() {
+        val c = Config(enabled = true, fade = 30)
+        val w = Window(8 * 60, 7 * 60 + 50)
+        assertEquals(1f, Schedule.level(c, 7 * 60 + 50, w))
+        assertEquals(0.5f, Schedule.level(c, 7 * 60 + 55, w), 0.0001f)
+        assertEquals(0.1f, Schedule.level(c, 7 * 60 + 59, w), 0.0001f)
+        assertEquals(0f, Schedule.level(c, 8 * 60, w))
+        assertEquals(1f / 30f, Schedule.level(c, 8 * 60 + 1, w), 0.0001f)
+    }
+
+    @Test
+    fun filterStatusMatchesWhetherItDraws() {
+        val c = Config(enabled = true, auto = false)
+        val w = Window(21 * 60, 7 * 60)
+        val minute = 12 * 60
+        fun state(config: Config, trusted: Boolean = false, canDraw: Boolean = true) =
+            FilterState.current(config, minute, w, trusted, canDraw)
+
+        val disabled = state(c.copy(enabled = false), canDraw = false)
+        val missingPermission = state(c, canDraw = false)
+        val zeroStrength = state(c.copy(strength = 0, dim = 0))
+        val waiting = state(c.copy(auto = true))
+        for (inactive in listOf(disabled, missingPermission, zeroStrength, waiting)) {
+            assertEquals(0f, inactive.alpha)
+        }
+        assertEquals(4, setOf(disabled.text, missingPermission.text, zeroStrength.text, waiting.text).size)
+        assertTrue(state(c, trusted = true, canDraw = false).alpha > 0f)
+        assertTrue(state(c.copy(strength = 0, dim = 50)).alpha > 0f)
+    }
+
+    @Test
     fun touchesPassThrough() {
         val (_, alpha) = Tint.layer(Config(strength = 100, dim = 100), 1f)
         assertTrue(alpha <= Tint.MAX_ALPHA + 1e-4f)

@@ -5,6 +5,8 @@ import android.content.Intent
 import android.view.View
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Окно TYPE_ACCESSIBILITY_OVERLAY система считает доверенным: касания проходят сквозь него при любой плотности,
@@ -15,7 +17,7 @@ class EmberAccessibility : AccessibilityService() {
     private var view: View? = null
 
     override fun onServiceConnected() {
-        instance = this
+        connection.value = this
         if (Prefs.load(this).enabled) FilterService.start(this)
     }
 
@@ -37,18 +39,19 @@ class EmberAccessibility : AccessibilityService() {
 
     override fun onUnbind(intent: Intent?): Boolean {
         hide()
-        instance = null
+        if (instance === this) connection.value = null
         return super.onUnbind(intent)
     }
 
     override fun onDestroy() {
         hide()
-        instance = null
+        if (instance === this) connection.value = null
         super.onDestroy()
     }
 
     companion object {
-        var instance: EmberAccessibility? = null
-            private set
+        private val connection = MutableStateFlow<EmberAccessibility?>(null)
+        val connected = connection.asStateFlow()
+        val instance: EmberAccessibility? get() = connection.value
     }
 }

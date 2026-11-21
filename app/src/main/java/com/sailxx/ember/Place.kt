@@ -10,17 +10,24 @@ import android.os.Build
 import android.os.CancellationSignal
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
+import androidx.annotation.MainThread
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
 
-/** Координаты для расчёта заката: последнее известное место или один свежий замер со всех доступных источников. */
+/** Координаты для расчёта заката: недавний замер или новый запрос к доступным источникам. */
 object Place {
+    private const val MAX_LOCATION_AGE_NANOS = 5 * 60 * 1_000_000_000L
     enum class Error { OFF, NO_FIX }
 
+    @MainThread
     @SuppressLint("MissingPermission")
-    fun locate(ctx: Context, done: (Location?, Error?) -> Unit) {
+    fun locate(ctx: Context, done: (Location?, Error?) -> Unit): (() -> Unit)? {
         val lm = ctx.getSystemService(LocationManager::class.java)
-        if (!LocationManagerCompat.isLocationEnabled(lm)) return done(null, Error.OFF)
+        if (!LocationManagerCompat.isLocationEnabled(lm)) {
+            done(null, Error.OFF)
+            return null
+        }
 
         // GPS доступен только с точным разрешением; network часто отключён без сервисов Google — поэтому пробуем всё.
         val fine = ContextCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -31,31 +38,52 @@ object Place {
             if (fine) add(LocationManager.GPS_PROVIDER)
         }.filter { it in all && runCatching { lm.isProviderEnabled(it) }.getOrDefault(false) }
 
-        // Для заката хватает точности города, поэтому подходит и старое место.
         val last = (providers + LocationManager.PASSIVE_PROVIDER)
             .mapNotNull { runCatching { lm.getLastKnownLocation(it) }.getOrNull() }
-            .maxByOrNull { it.time }
-        if (last != null) return done(last, null)
-        if (providers.isEmpty()) return done(null, Error.NO_FIX)
+            .filter(::isRecent)
+            .maxByOrNull { it.elapsedRealtimeNanos }
+        if (last != null || providers.isEmpty()) {
+            done(last, if (last == null) Error.NO_FIX else null)
+            return null
+        }
 
         val main = Handler(Looper.getMainLooper())
         val cancel = CancellationSignal()
-        var finished = false
         var waiting = providers.size
-        fun finish(loc: Location?) {
-            if (finished) return
-            finished = true
-            cancel.cancel()
-            done(loc, if (loc == null) Error.NO_FIX else null)
+        val timeout = object : Runnable {
+            override fun run() = finish(null)
+
+            fun finish(loc: Location?) {
+                if (cancel.isCanceled) return
+                main.removeCallbacks(this)
+                cancel.cancel()
+                done(loc, if (loc == null) Error.NO_FIX else null)
+            }
         }
-        main.postDelayed({ finish(null) }, 30_000)
+        main.postDelayed(timeout, 30_000)
         providers.forEach { p ->
             runCatching {
                 LocationManagerCompat.getCurrentLocation(lm, p, cancel, ContextCompat.getMainExecutor(ctx)) { loc ->
                     waiting--
-                    if (loc != null) finish(loc) else if (waiting == 0) finish(null)
+                    if (loc != null && isRecent(loc)) {
+                        timeout.finish(loc)
+                    } else if (waiting == 0) {
+                        timeout.run()
+                    }
                 }
-            }.onFailure { if (--waiting == 0) main.post { finish(null) } }
+            }.onFailure {
+                if (--waiting == 0) {
+                    main.removeCallbacks(timeout)
+                    main.post(timeout)
+                }
+            }
+        }
+        return {
+            main.removeCallbacks(timeout)
+            cancel.cancel()
         }
     }
+
+    private fun isRecent(location: Location): Boolean =
+        SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos in 0..MAX_LOCATION_AGE_NANOS
 }

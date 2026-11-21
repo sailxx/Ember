@@ -4,6 +4,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.SharedPreferences
 import android.service.quicksettings.TileService
+import androidx.annotation.MainThread
+import androidx.core.content.edit
 
 data class Config(
     val enabled: Boolean = false,
@@ -40,20 +42,28 @@ object Prefs {
         )
     }
 
-    fun save(ctx: Context, c: Config) {
-        sp(ctx).edit()
-            .putBoolean("enabled", c.enabled)
-            .putBoolean("auto", c.auto)
-            .putBoolean("sun", c.sun)
-            .putInt("on", c.on)
-            .putInt("off", c.off)
-            .putInt("kelvin", c.kelvin)
-            .putInt("strength", c.strength)
-            .putInt("dim", c.dim)
-            .putInt("fade", c.fade)
-            .putFloat("lat", c.lat.toFloat())
-            .putFloat("lon", c.lon.toFloat())
-            .apply()
-        runCatching { TileService.requestListeningState(ctx, ComponentName(ctx, EmberTile::class.java)) }
+    @MainThread
+    fun update(ctx: Context, transform: Config.() -> Config): Config {
+        val previous = load(ctx)
+        val next = previous.transform()
+        if (next == previous) return previous
+
+        sp(ctx).edit {
+            putBoolean("enabled", next.enabled)
+            putBoolean("auto", next.auto)
+            putBoolean("sun", next.sun)
+            putInt("on", next.on)
+            putInt("off", next.off)
+            putInt("kelvin", next.kelvin)
+            putInt("strength", next.strength)
+            putInt("dim", next.dim)
+            putInt("fade", next.fade)
+            putFloat("lat", next.lat.toFloat())
+            putFloat("lon", next.lon.toFloat())
+        }
+        if (next.enabled != previous.enabled || (next.enabled && next.kelvin != previous.kelvin)) {
+            runCatching { TileService.requestListeningState(ctx, ComponentName(ctx, EmberTile::class.java)) }
+        }
+        return next
     }
 }

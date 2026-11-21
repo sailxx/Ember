@@ -19,4 +19,4 @@ jobs:
           java-version: 21
       - uses: gradle/actions/setup-gradle@v6
       - name: Сборка
-        run: ./gradlew testDebugUnitTest assembleRelease --no-daemon
+        run: ./gradlew lintDebug testDebugUnitTest assembleRelease --no-daemon

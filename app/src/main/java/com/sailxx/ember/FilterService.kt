@@ -14,9 +14,12 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /** Держит полноэкранный тёплый оверлей и раз в 30 секунд пересчитывает его по расписанию. */
 class FilterService : Service(), SharedPreferences.OnSharedPreferenceChangeListener {
@@ -24,6 +27,7 @@ class FilterService : Service(), SharedPreferences.OnSharedPreferenceChangeListe
     private var view: View? = null
     private var lastText = ""
     private val handler = Handler(Looper.getMainLooper())
+    private val applyPreferences = Runnable { update() }
     private val tick = object : Runnable {
         override fun run() {
             update()
@@ -43,20 +47,24 @@ class FilterService : Service(), SharedPreferences.OnSharedPreferenceChangeListe
         if (Build.VERSION.SDK_INT >= 34) startForeground(ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         else startForeground(ID, n)
         Prefs.sp(this).registerOnSharedPreferenceChangeListener(this)
-        handler.post(tick)
+        handler.postDelayed(tick, 30_000)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_OFF) {
-            Prefs.save(this, Prefs.load(this).copy(enabled = false))
+            Prefs.update(this) { copy(enabled = false) }
             stopSelf()
             return START_NOT_STICKY
         }
         update()
+        serviceRunning.value = true
         return START_STICKY
     }
 
-    override fun onSharedPreferenceChanged(sp: SharedPreferences?, key: String?) = update()
+    override fun onSharedPreferenceChanged(sp: SharedPreferences?, key: String?) {
+        handler.removeCallbacks(applyPreferences)
+        handler.post(applyPreferences)
+    }
 
     private fun update() {
         val c = Prefs.load(this)
@@ -65,28 +73,19 @@ class FilterService : Service(), SharedPreferences.OnSharedPreferenceChangeListe
             return
         }
         val w = Schedule.window(c)
-        val level = Schedule.level(c, Schedule.nowMinute(), w)
         val a11y = EmberAccessibility.instance
+        val state = FilterState.current(c, Schedule.nowMinute(), w, a11y != null, Settings.canDrawOverlays(this))
         if (a11y != null) {
             // Доверенное окно службы спец. возможностей: касания проходят всегда, плотность не ограничена 0.8.
             removeView()
-            val (color, alpha) = Tint.layer(c, level, Tint.MAX_ALPHA_TRUSTED)
-            if (alpha == 0f) a11y.hide() else a11y.show(color, alpha)
+            if (state.alpha == 0f) a11y.hide() else a11y.show(state.color, state.alpha)
         } else {
-            val (color, alpha) = Tint.layer(c, level, Tint.MAX_ALPHA)
-            if (alpha == 0f || !Settings.canDrawOverlays(this)) removeView() else showView(color, alpha)
+            if (state.alpha == 0f) removeView() else showView(state.color, state.alpha)
         }
 
-        val text = when {
-            a11y == null && !Settings.canDrawOverlays(this) -> "Нет разрешения «поверх других окон»"
-            level >= 1f -> "${c.kelvin} K · до ${if (c.auto) Schedule.hhmm(w.end) else "выключения"}"
-            level > 0f -> "${c.kelvin} K · ${(level * 100).toInt()}%"
-            c.sun && c.hasPlace -> "Ждёт заката в ${Schedule.hhmm(w.start)}"
-            else -> "Включится в ${Schedule.hhmm(w.start)}"
-        }
-        if (text != lastText) {
-            lastText = text
-            getSystemService(NotificationManager::class.java).notify(ID, notification(text))
+        if (state.text != lastText) {
+            lastText = state.text
+            getSystemService(NotificationManager::class.java).notify(ID, notification(state.text))
         }
     }
 
@@ -120,7 +119,9 @@ class FilterService : Service(), SharedPreferences.OnSharedPreferenceChangeListe
     }
 
     override fun onDestroy() {
+        serviceRunning.value = false
         handler.removeCallbacks(tick)
+        handler.removeCallbacks(applyPreferences)
         Prefs.sp(this).unregisterOnSharedPreferenceChangeListener(this)
         removeView()
         EmberAccessibility.instance?.hide()
@@ -128,6 +129,8 @@ class FilterService : Service(), SharedPreferences.OnSharedPreferenceChangeListe
     }
 
     companion object {
+        private val serviceRunning = MutableStateFlow(false)
+        val running = serviceRunning.asStateFlow()
         private const val ID = 1
         private const val CHANNEL = "filter"
         private const val ACTION_OFF = "com.sailxx.ember.OFF"
@@ -135,6 +138,6 @@ class FilterService : Service(), SharedPreferences.OnSharedPreferenceChangeListe
         /** false — система не дала запустить сервис из фона. */
         fun start(ctx: Context): Boolean = runCatching {
             ContextCompat.startForegroundService(ctx, Intent(ctx, FilterService::class.java))
-        }.isSuccess
+        }.onFailure { Log.w("EmberFilter", "Unable to start filter service", it) }.isSuccess
     }
 }
