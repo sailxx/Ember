@@ -1,5 +1,6 @@
 package com.sailxx.ember
 
+import android.os.Build
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,7 +23,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -35,7 +35,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Switch
+import androidx.compose.material3.Typography
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -50,27 +50,37 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.cos
 import kotlin.math.roundToInt
-import kotlin.math.sin
 
 internal enum class EmberThemeMode(val title: String) {
     System("Как на устройстве"),
@@ -82,7 +92,11 @@ private val Presets = listOf("Мягкий" to 3400, "Тёплый" to 2700, "С
 private val FadeOptions = listOf(0, 15, 30, 60)
 private val ControlShape = RoundedCornerShape(16.dp)
 private val PanelShape = RoundedCornerShape(28.dp)
-private val NumberStyle = TextStyle(fontFeatureSettings = "tnum")
+private val Golos = FontFamily(Font(R.font.golos))
+private val Mono = FontFamily(Font(R.font.jbmono))
+private val NumberStyle = TextStyle(fontFamily = Mono, fontFeatureSettings = "tnum")
+private val DockHeight = 64.dp
+private val DockOffset = 52.dp
 
 @Composable
 internal fun EmberTheme(dark: Boolean, content: @Composable () -> Unit) {
@@ -90,12 +104,12 @@ internal fun EmberTheme(dark: Boolean, content: @Composable () -> Unit) {
         darkColorScheme(
             primary = Color(0xFFFF9254), onPrimary = Color(0xFF321706),
             primaryContainer = Color(0xFF39251D), onPrimaryContainer = Color(0xFFFFAF7D),
-            background = Color(0xFF151311), onBackground = Color(0xFFFFF5ED),
-            surface = Color(0xFF211D1A), onSurface = Color(0xFFFFF5ED),
-            surfaceVariant = Color(0xFF352E28), onSurfaceVariant = Color(0xFFCCBEB3),
-            outline = Color(0xFF9A877B), outlineVariant = Color(0xFF493D34),
-            surfaceContainer = Color(0xFF29221E), surfaceContainerHigh = Color(0xFF322820),
-            surfaceContainerHighest = Color(0xFF392E26),
+            background = Color(0xFF151515), onBackground = Color(0xFFEDEDED),
+            surface = Color(0xFF19191B), onSurface = Color(0xFFEDEDED),
+            surfaceVariant = Color(0xFF38383A), onSurfaceVariant = Color(0xFFAAA9AA),
+            outline = Color(0xFF88888A), outlineVariant = Color(0xFF444446),
+            surfaceContainer = Color(0xFF252526), surfaceContainerHigh = Color(0xFF303032),
+            surfaceContainerHighest = Color(0xFF3A3A3C),
         )
     } else {
         lightColorScheme(
@@ -114,6 +128,12 @@ internal fun EmberTheme(dark: Boolean, content: @Composable () -> Unit) {
             secondaryContainer = colors.primaryContainer,
             onSecondaryContainer = colors.onPrimaryContainer,
             surfaceTint = colors.primary,
+        ),
+        typography = Typography(
+            bodyLarge = Typography().bodyLarge.copy(fontFamily = Golos),
+            bodyMedium = Typography().bodyMedium.copy(fontFamily = Golos),
+            labelLarge = Typography().labelLarge.copy(fontFamily = Golos),
+            headlineSmall = Typography().headlineSmall.copy(fontFamily = Golos),
         ),
         content = content,
     )
@@ -141,50 +161,70 @@ internal fun EmberScreen(
     val colors = MaterialTheme.colorScheme
     var showAccess by rememberSaveable { mutableStateOf(false) }
     var timeField by rememberSaveable { mutableStateOf<String?>(null) }
+    var showSchedule by rememberSaveable { mutableStateOf(false) }
+    val backdrop = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) rememberGraphicsLayer() else null
+    var contentPosition by remember { mutableStateOf(Offset.Zero) }
+    // The dock samples the scroll content without including itself in the captured layer.
+    val captureBackdrop = if (backdrop == null) Modifier else Modifier
+        .onGloballyPositioned { contentPosition = it.positionInRoot() }
+        .drawWithContent {
+            backdrop.record {
+                drawRect(colors.background)
+                this@drawWithContent.drawContent()
+            }
+            drawLayer(backdrop)
+        }
 
-    val scheduleSummary = when {
+    val scheduleSummary = if (config.auto) timeRange(window) else "24 часа"
+    val scheduleMode = when {
         !config.auto -> "Всегда"
-        config.sun && config.hasPlace -> "По солнцу · ${timeRange(window)}"
-        else -> timeRange(window)
+        config.sun -> "По солнцу"
+        else -> "По времени"
     }
     Box(
         Modifier.fillMaxSize().background(colors.background).safeDrawingPadding(),
         contentAlignment = Alignment.TopCenter,
     ) {
-        Column(Modifier.widthIn(max = 600.dp).fillMaxSize().padding(horizontal = 16.dp)) {
-            ThemeBar(dark, themeMode, onThemeChange)
+        Column(Modifier.widthIn(max = 492.dp).fillMaxSize().then(captureBackdrop).padding(horizontal = 16.dp)) {
+            ThemeBar(themeMode, onThemeChange)
             Column(
                 Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())
-                    .padding(start = 4.dp, end = 4.dp, top = 12.dp, bottom = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .padding(top = 8.dp, bottom = DockOffset + DockHeight + 24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                FilterSwitch(
-                    enabled = config.enabled,
-                    active = active,
-                    status = status,
-                    onChange = { enabled -> onConfigChange { copy(enabled = enabled) } },
-                )
+                InstrumentPanel(config.kelvin, active, status) { value -> onConfigChange { copy(kelvin = value) } }
+
                 if (config.enabled && !hasAccess) {
                     TextButton(onClick = { showAccess = true }) { Text("Настроить доступ") }
                 }
 
-                InstrumentPanel(config.kelvin, dark) { value -> onConfigChange { copy(kelvin = value) } }
-                Column(
-                    Modifier.fillMaxWidth().panel(dark, colors.surface, colors.outlineVariant).padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    SliderSetting("Сила фильтра", config.strength) { value -> onConfigChange { copy(strength = value) } }
-                    QuietDivider()
-                    SliderSetting("Затемнение", config.dim) { value -> onConfigChange { copy(dim = value) } }
+                BoxWithConstraints(Modifier.fillMaxWidth().panel(colors.surface, colors.outlineVariant).padding(12.dp)) {
+                    if (maxWidth >= 272.dp && LocalDensity.current.fontScale <= 1.25f) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                            Box(Modifier.weight(1f)) {
+                                SliderSetting("Сила фильтра", config.strength) { value -> onConfigChange { copy(strength = value) } }
+                            }
+                            Box(Modifier.weight(1f)) {
+                                SliderSetting("Затемнение", config.dim) { value -> onConfigChange { copy(dim = value) } }
+                            }
+                        }
+                    } else {
+                        Column {
+                            SliderSetting("Сила фильтра", config.strength) { value -> onConfigChange { copy(strength = value) } }
+                            QuietDivider()
+                            SliderSetting("Затемнение", config.dim) { value -> onConfigChange { copy(dim = value) } }
+                        }
+                    }
                 }
 
                 Column(
-                    Modifier.fillMaxWidth().panel(dark, colors.surface, colors.outlineVariant).padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    Modifier.fillMaxWidth().panel(colors.surface, colors.outlineVariant).padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    RowHeadline("Расписание", scheduleSummary)
+                    RowHeadline("График суток", scheduleSummary)
                     DayProfile(config, window, minute)
-                    ScheduleSettings(config, window, locating, placeNote, onLocate, onConfigChange) { timeField = it }
+                    QuietDivider()
+                    SettingLine("Расписание", "$scheduleMode  ›", onClick = { showSchedule = true })
                 }
 
                 if (hasAccess && !trusted) {
@@ -192,6 +232,28 @@ internal fun EmberScreen(
                 }
             }
         }
+
+        Box(
+            Modifier.align(Alignment.BottomCenter).widthIn(max = 492.dp).fillMaxWidth()
+                .padding(start = 8.dp, end = 8.dp, bottom = DockOffset),
+        ) {
+            FilterDock(dark, config.enabled, backdrop, { contentPosition }) {
+                onConfigChange { copy(enabled = !enabled) }
+            }
+        }
+    }
+
+    if (showSchedule) {
+        AlertDialog(
+            onDismissRequest = { showSchedule = false },
+            title = { Text("Расписание") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    ScheduleSettings(config, window, locating, placeNote, onLocate, onConfigChange) { timeField = it }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showSchedule = false }) { Text("Готово") } },
+        )
     }
 
     if (showAccess) {
@@ -234,34 +296,41 @@ internal fun EmberScreen(
     }
 }
 
-private fun Modifier.panel(dark: Boolean, fill: Color, border: Color) =
-    shadow(if (dark) 0.dp else 4.dp, PanelShape, ambientColor = Color.Black, spotColor = Color.Black.copy(alpha = 0.16f))
-        .background(fill, PanelShape)
-        .border(1.dp, border, PanelShape)
+private fun Modifier.panel(fill: Color, border: Color) = background(fill, PanelShape).border(1.dp, border, PanelShape)
 
 @Composable
-private fun ThemeBar(dark: Boolean, mode: EmberThemeMode, onChange: (EmberThemeMode) -> Unit) {
+private fun ThemeBar(mode: EmberThemeMode, onChange: (EmberThemeMode) -> Unit) {
     val colors = MaterialTheme.colorScheme
     var open by remember { mutableStateOf(false) }
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 4.dp).heightIn(min = 64.dp),
+        Modifier.fillMaxWidth().heightIn(min = 56.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text("Ember", color = colors.onSurface, fontSize = 25.sp, lineHeight = 32.sp, fontWeight = FontWeight.SemiBold)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(Modifier.size(18.dp).background(colors.onSurface.copy(alpha = .22f), CircleShape), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(10.dp).background(colors.onSurface, CircleShape))
+            }
+            Text("Ember", color = colors.onSurface, fontSize = 23.sp, style = NumberStyle, fontWeight = FontWeight.Bold)
+        }
         Box {
-            ThemeButton(dark, onClick = { open = true })
+            IconButton(onClick = { open = true }, modifier = Modifier.semantics { contentDescription = "Тема оформления" }) {
+                Canvas(Modifier.size(22.dp)) {
+                    for ((y, knob) in listOf(.32f to .66f, .68f to .34f)) {
+                        drawLine(colors.onSurface, Offset(1.dp.toPx(), size.height * y),
+                            Offset(size.width - 1.dp.toPx(), size.height * y), 1.7.dp.toPx(), StrokeCap.Round)
+                        val center = Offset(size.width * knob, size.height * y)
+                        drawCircle(colors.onSurface, 3.dp.toPx(), center)
+                        drawCircle(colors.background, 1.6.dp.toPx(), center)
+                    }
+                }
+            }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                 EmberThemeMode.entries.forEach { option ->
                     DropdownMenuItem(
-                        text = {
-                            Text(option.title, color = if (mode == option) colors.primary else colors.onSurface)
-                        },
+                        text = { Text(option.title, color = if (mode == option) colors.primary else colors.onSurface) },
                         modifier = Modifier.semantics { selected = mode == option },
-                        onClick = {
-                            open = false
-                            onChange(option)
-                        },
+                        onClick = { open = false; onChange(option) },
                     )
                 }
             }
@@ -270,137 +339,100 @@ private fun ThemeBar(dark: Boolean, mode: EmberThemeMode, onChange: (EmberThemeM
 }
 
 @Composable
-private fun ThemeButton(dark: Boolean, onClick: () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    IconButton(
-        onClick = onClick,
-        modifier = Modifier.size(48.dp).background(colors.surface, CircleShape)
-            .border(1.dp, colors.outlineVariant, CircleShape)
-            .semantics { contentDescription = "Тема оформления" },
-    ) {
-        Canvas(Modifier.size(20.dp)) {
-            val ink = colors.primary
-            val stroke = Stroke(1.7.dp.toPx(), cap = StrokeCap.Round)
-            if (dark) {
-                drawCircle(ink, size.width * 0.22f, style = stroke)
-                repeat(8) { i ->
-                    val angle = Math.PI * i / 4
-                    fun point(fraction: Float) = center + Offset(
-                        (cos(angle) * size.width * fraction).toFloat(),
-                        (sin(angle) * size.height * fraction).toFloat(),
-                    )
-                    drawLine(ink, point(0.36f), point(0.46f), stroke.width, StrokeCap.Round)
+private fun InstrumentPanel(kelvin: Int, active: Boolean, status: String, onChange: (Int) -> Unit) {
+    val ink = Color(0xFFFFF7F0)
+    val min = Presets.last().second
+    val max = Presets.first().second
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            Modifier.fillMaxWidth().background(
+                Brush.linearGradient(listOf(Color(0xFFB95113), Color(0xFF77310E))), PanelShape,
+            ).border(1.dp, Color.White.copy(alpha = .23f), PanelShape).padding(horizontal = 18.dp, vertical = 14.dp),
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.size(30.dp).background(Color.White.copy(alpha = .15f), CircleShape), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(10.dp).border(1.dp, ink, CircleShape))
                 }
-            } else {
-                val moon = Path().apply {
-                    moveTo(size.width * 0.54f, size.height * 0.12f)
-                    cubicTo(size.width * 0.25f, size.height * 0.14f, size.width * 0.08f, size.height * 0.37f,
-                        size.width * 0.11f, size.height * 0.62f)
-                    cubicTo(size.width * 0.16f, size.height * 0.94f, size.width * 0.71f, size.height * 1.00f,
-                        size.width * 0.89f, size.height * 0.61f)
-                    cubicTo(size.width * 0.59f, size.height * 0.78f, size.width * 0.32f, size.height * 0.43f,
-                        size.width * 0.54f, size.height * 0.12f)
-                }
-                drawPath(moon, ink, style = stroke)
-            }
-        }
-    }
-}
-
-@Composable
-private fun InstrumentPanel(kelvin: Int, dark: Boolean, onChange: (Int) -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    Column(
-        Modifier.fillMaxWidth().panel(dark, colors.surface, colors.outlineVariant),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Column(Modifier.padding(start = 8.dp, end = 8.dp, top = 8.dp)) {
-            BoxWithConstraints(
-                Modifier.fillMaxWidth().background(colors.primaryContainer, RoundedCornerShape(20.dp)).padding(16.dp),
-            ) {
-                val showDial = maxWidth >= 248.dp && LocalDensity.current.fontScale <= 1.15f
-                val numberSize = if (showDial && maxWidth < 300.dp) 40.sp else 48.sp
-                Row(
-                    Modifier.fillMaxWidth().heightIn(min = 112.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Температура", color = colors.onPrimaryContainer, fontSize = 14.sp)
-                        Text(
-                            "$kelvin K", color = colors.onPrimaryContainer,
-                            fontSize = numberSize, lineHeight = numberSize * 1.1f,
-                            fontWeight = FontWeight.SemiBold, style = NumberStyle,
-                        )
-                    }
-                    if (showDial) TemperatureDial(kelvin)
+                Text("Температура", Modifier.weight(1f), color = ink, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.End)) {
+                    Box(Modifier.size(6.dp).then(if (active) Modifier.background(ink, CircleShape) else Modifier.border(1.dp, ink, CircleShape)))
+                    Text(status, color = ink, fontSize = 11.sp, lineHeight = 14.sp, style = NumberStyle, textAlign = TextAlign.End)
                 }
             }
-        }
-        Column(Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
-            PresetScale(kelvin, onChange)
-        }
-    }
-}
-
-@Composable
-private fun TemperatureDial(kelvin: Int) {
-    val colors = MaterialTheme.colorScheme
-    val progress = ((kelvin - Presets.last().second).toFloat() / (Presets.first().second - Presets.last().second))
-        .coerceIn(0f, 1f)
-    Canvas(Modifier.size(96.dp)) {
-        val outer = size.minDimension * 0.44f
-        val dial = size.minDimension * 0.31f
-        val start = 140f
-        val sweep = 260f
-        fun point(angle: Float, radius: Float): Offset {
-            val radians = Math.toRadians(angle.toDouble())
-            return center + Offset((cos(radians) * radius).toFloat(), (sin(radians) * radius).toFloat())
-        }
-        for (i in 0..24) {
-            val step = i / 24f
-            val angle = start + step * sweep
-            val major = i % 6 == 0
-            val length = if (major) 8.dp.toPx() else 4.dp.toPx()
-            val ink = colors.onPrimaryContainer.copy(alpha = if (step <= progress) 0.84f else 0.30f)
-            drawLine(ink, point(angle, outer - length), point(angle, outer),
-                if (major) 2.dp.toPx() else 1.dp.toPx(), StrokeCap.Round)
-        }
-        drawArc(
-            colors.onPrimaryContainer.copy(alpha = 0.14f), start, sweep, false,
-            topLeft = center - Offset(dial, dial), size = Size(dial * 2, dial * 2),
-            style = Stroke(4.dp.toPx(), cap = StrokeCap.Round),
-        )
-        if (progress > 0f) {
-            drawArc(
-                Color(0xFFF46B29), start, sweep * progress, false,
-                topLeft = center - Offset(dial, dial), size = Size(dial * 2, dial * 2),
-                style = Stroke(4.dp.toPx(), cap = StrokeCap.Round),
+            BoxWithConstraints(Modifier.fillMaxWidth().padding(top = 4.dp), contentAlignment = Alignment.Center) {
+                val fontSize = (maxWidth.value / (3.1f * LocalDensity.current.fontScale)).coerceAtMost(62f)
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(kelvin.toString(), color = ink, fontSize = fontSize.sp, lineHeight = (fontSize + 4).sp,
+                        fontFamily = Golos, fontWeight = FontWeight.Bold, letterSpacing = (-3).sp)
+                    Text(" K", Modifier.padding(bottom = 7.dp), color = ink, fontSize = (fontSize * .35f).sp, style = NumberStyle)
+                }
+            }
+            Slider(
+                value = kelvin.coerceIn(min, max).toFloat(),
+                onValueChange = { onChange((it / 50).roundToInt() * 50) },
+                valueRange = min.toFloat()..max.toFloat(),
+                colors = SliderDefaults.colors(thumbColor = ink, activeTrackColor = ink, inactiveTrackColor = ink.copy(alpha = .28f)),
+                modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Температура" },
             )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("$min K", color = ink, fontSize = 10.sp, style = NumberStyle)
+                Text("$max K", color = ink, fontSize = 10.sp, style = NumberStyle)
+            }
         }
-        drawCircle(temperatureColor(kelvin), 11.dp.toPx())
-        drawCircle(colors.onPrimaryContainer.copy(alpha = 0.28f), 11.dp.toPx(), style = Stroke(1.dp.toPx()))
-        drawCircle(colors.onPrimaryContainer, 3.dp.toPx(), center = point(start + sweep * progress, dial))
+        PresetScale(kelvin, onChange)
     }
 }
 
 @Composable
-private fun FilterSwitch(enabled: Boolean, active: Boolean, status: String, onChange: (Boolean) -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 64.dp).clip(ControlShape)
-            .toggleable(value = enabled, role = Role.Switch, onValueChange = onChange),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
+private fun FilterDock(
+    dark: Boolean,
+    enabled: Boolean,
+    backdrop: GraphicsLayer?,
+    contentPosition: () -> Offset,
+    onClick: () -> Unit,
+) {
+    val gradient = when {
+        dark && enabled -> listOf(Color(0xCE795340), Color(0xE0442B23))
+        dark -> listOf(Color(0xCE515153), Color(0xE02D2D30))
+        enabled -> listOf(Color(0xECFFF5EA), Color(0xDDEACABA))
+        else -> listOf(Color(0xECFFFFFF), Color(0xDDE0E0DF))
+    }
+    val ink = if (dark) Color(0xFFFFF7F0) else Color(0xFF2E1A13)
+    val lens = if (dark) Color.White.copy(alpha = .12f) else Color.White.copy(alpha = .55f)
+    var dockPosition by remember { mutableStateOf(Offset.Zero) }
+    Box(
+        Modifier.fillMaxWidth().heightIn(min = DockHeight).shadow(10.dp, PanelShape)
+            .onGloballyPositioned { dockPosition = it.positionInRoot() }
+            .clip(PanelShape)
+            .border(1.dp, ink.copy(alpha = .27f), PanelShape)
+            .clickable(role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Фильтр", color = colors.onSurface, fontSize = 28.sp, lineHeight = 32.sp)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(8.dp).background(if (active) colors.primary else colors.outline, CircleShape))
-                Text(status, color = colors.onSurfaceVariant, fontSize = 14.sp)
+        if (backdrop != null) {
+            Canvas(Modifier.matchParentSize().blur(18.dp)) {
+                val shift = contentPosition() - dockPosition
+                translate(shift.x, shift.y) { drawLayer(backdrop) }
             }
         }
-        Switch(checked = enabled, onCheckedChange = null)
+        Box(Modifier.matchParentSize().background(Brush.linearGradient(gradient)))
+        Row(
+            Modifier.fillMaxWidth().padding(5.dp).clip(RoundedCornerShape(22.dp))
+                .background(Brush.verticalGradient(listOf(lens, Color.Transparent)))
+                .border(1.dp, lens, RoundedCornerShape(22.dp))
+                .padding(horizontal = 14.dp, vertical = 13.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Canvas(Modifier.size(19.dp)) {
+                val stroke = 1.6.dp.toPx()
+                drawArc(ink, -51f, 282f, false, topLeft = Offset(stroke, stroke),
+                    size = Size(size.width - 2 * stroke, size.height - 2 * stroke), style = Stroke(stroke, cap = StrokeCap.Round))
+                drawLine(ink, Offset(center.x, stroke), Offset(center.x, center.y), stroke, StrokeCap.Round)
+            }
+            Text(if (enabled) "Выключить фильтр" else "Включить фильтр", color = ink, fontSize = 16.sp,
+                fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+        }
     }
 }
 
@@ -420,32 +452,32 @@ private fun RowHeadline(label: String, value: String) {
     }
 }
 
-private fun temperatureColor(kelvin: Int): Color {
-    val (r, g, b) = Tint.rgb(kelvin)
-    return Color(r, g, b)
-}
-
 @Composable
 private fun PresetScale(kelvin: Int, onChange: (Int) -> Unit) {
     val colors = MaterialTheme.colorScheme
-    Column(Modifier.selectableGroup()) {
-        Presets.forEach { (label, value) ->
-            val selected = value == kelvin
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(ControlShape)
-                    .background(if (selected) colors.primaryContainer else Color.Transparent)
-                    .selectable(selected, role = Role.RadioButton, onClick = { onChange(value) })
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(Modifier.size(width = 24.dp, height = 12.dp).background(temperatureColor(value), RoundedCornerShape(4.dp)))
-                Text(
-                    label, Modifier.weight(1f), color = colors.onSurface, fontSize = 15.sp,
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                )
-                Text("$value K", color = if (selected) colors.onPrimaryContainer else colors.onSurfaceVariant,
-                    fontSize = 14.sp, style = NumberStyle)
+    Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Presets.chunked(2).forEach { presets ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                presets.forEach { (label, value) ->
+                    val selected = value == kelvin
+                    val edge = if (selected) Color(0xFFB87048) else colors.outlineVariant
+                    Row(
+                        Modifier.weight(1f).heightIn(min = 48.dp).clip(ControlShape)
+                            .background(if (selected) colors.surfaceContainerHighest else colors.surface)
+                            .border(1.dp, edge, ControlShape)
+                            .selectable(selected, role = Role.RadioButton, onClick = { onChange(value) })
+                            .padding(horizontal = 9.dp, vertical = 5.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(Modifier.size(8.dp).then(
+                            if (selected) Modifier.background(Color(0xFFFFA76E), CircleShape)
+                            else Modifier.border(1.dp, Color(0xFFC18766), CircleShape),
+                        ))
+                        Text(label, Modifier.weight(1f), color = colors.onSurface, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text("$value K", color = colors.onSurfaceVariant, fontSize = 10.sp, style = NumberStyle)
+                    }
+                }
             }
         }
     }
@@ -574,7 +606,7 @@ private fun timeRange(window: Window) = "${Schedule.hhmm(window.start)}–${Sche
 @Composable
 private fun DayProfile(config: Config, window: Window, minute: Int) {
     val colors = MaterialTheme.colorScheme
-    val plot = if (config.enabled) colors.primary else colors.onSurfaceVariant
+    val plot = if (config.enabled) colors.onSurface else colors.onSurfaceVariant
     val grid = colors.onSurface.copy(alpha = 0.12f)
     val levels = remember(config.auto, config.fade, window) {
         val planned = config.copy(enabled = true)
@@ -582,27 +614,27 @@ private fun DayProfile(config: Config, window: Window, minute: Int) {
     }
 
     Column(
-        Modifier.fillMaxWidth().background(colors.surfaceVariant.copy(alpha = 0.55f), ControlShape).padding(12.dp),
+        Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text("Сейчас ${Schedule.hhmm(minute)}", color = colors.onSurfaceVariant, fontSize = 13.sp, style = NumberStyle)
         Canvas(
-            Modifier.fillMaxWidth().height(88.dp)
+            Modifier.fillMaxWidth().height(54.dp)
                 .semantics {
                     contentDescription = if (config.auto) "Профиль фильтра, ${timeRange(window)}" else "Профиль фильтра на весь день"
                 },
         ) {
-            val inset = 4.dp.toPx()
+            val inset = 7.dp.toPx()
             val bottom = size.height - inset
             val range = bottom - inset
             fun x(m: Int) = inset + (size.width - 2 * inset) * m / Schedule.DAY
             fun y(m: Int) = bottom - range * levels[m % Schedule.DAY]
 
-            for (step in 0..4) {
-                val x = x(step * Schedule.DAY / 4)
-                drawLine(grid, Offset(x, inset), Offset(x, bottom), 1.dp.toPx())
+            val dashes = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 4.dp.toPx()))
+            for (step in 0..2) {
+                val y = bottom - range * step / 2
+                drawLine(grid, Offset(inset, y), Offset(size.width - inset, y), 1.dp.toPx(), pathEffect = dashes)
             }
-            drawLine(grid, Offset(inset, bottom), Offset(size.width - inset, bottom), 1.dp.toPx())
             val profile = Path().apply {
                 moveTo(x(0), y(0))
                 for (time in 1..Schedule.DAY) lineTo(x(time), y(time))
@@ -615,8 +647,9 @@ private fun DayProfile(config: Config, window: Window, minute: Int) {
             }
             drawPath(area, plot.copy(alpha = 0.14f))
             drawPath(profile, plot, style = Stroke(2.dp.toPx()))
-            drawLine(colors.onSurfaceVariant, Offset(x(minute), inset), Offset(x(minute), bottom), 1.dp.toPx())
-            drawCircle(plot, radius = inset, center = Offset(x(minute), y(minute)))
+            val marker = Offset(x(minute), y(minute))
+            drawCircle(plot.copy(alpha = .28f), radius = 6.dp.toPx(), center = marker)
+            drawCircle(plot, radius = 3.5.dp.toPx(), center = marker)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             listOf("00", "06", "12", "18", "24").forEach {
