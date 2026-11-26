@@ -43,14 +43,30 @@ Ember has **no internet access** — the permission isn’t in the manifest. Coo
 
 <br>
 
-<img src="assets/readme/numbers-en.svg" width="100%" alt="By the numbers: 1.2 MB, no internet, 0 ads, 4 presets, 30-minute fade">
+<img src="assets/readme/numbers-en.svg" width="100%" alt="Two interface languages, no internet or ads, four presets, and a gradual transition">
+
+## About Ember
+
+<img src="assets/readme/about-en.svg" width="100%" alt="About Ember">
+
+Ember started on **October 16, 2026** as a small project to make Android screens warmer at night. It's free and non-commercial. There are no ads, accounts, or analytics. Ember doesn't track you, doesn't collect your data, and never will.
+
+Your settings stay on your phone. If you choose to use your location for the schedule, Ember reads it once and works out sunrise and sunset on the device. The app has no internet permission. [Privacy policy](PRIVACY.md)
+
+## Roadmap
+
+<img src="assets/readme/roadmap-en.svg" width="100%" alt="Roadmap">
+
+- Check how the filter behaves after a reboot and on more Android phones.
+- Make the schedule easier to set up and clarify when the filter will turn on.
+- Improve readability at larger text sizes and make the controls easier to use with TalkBack.
 
 <details>
 <summary><b>Install</b></summary>
 
 1. Download [`Ember.apk`](https://github.com/sailxx/Ember/releases/latest/download/Ember.apk).
 2. Open it on your phone and allow installing from unknown sources.
-3. Launch Ember, tap the orange card and enable Ember in Accessibility — then touches always pass through the filter.
+3. Open Ember, tap **Turn on filter**, then choose **Set up access → Accessibility** and enable Ember.
    On Android 13+ for apps installed outside Play, first open App info → ⋮ → “Allow restricted settings”.
 4. Android 8.0 or newer.
 

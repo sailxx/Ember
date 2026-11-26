@@ -2,55 +2,325 @@
   "ru": {
     "hero": {
       "alt": "Ember — фильтр синего света для Android",
-      "title": ["Тёплый экран", "*после заката*"],
-      "sub": ["Ember убирает синий свет вечером и ночью —", "глазам легче, засыпать проще."],
-      "cards": [["По солнцу", "Закат и рассвет сами"], ["Плавно", "Переход за 30 минут"], ["Офлайн", "Без интернета"], ["Бесплатно", "Без рекламы"]],
-      "screen": { "title": "Тепло с 19:12", "presets": ["Мягкий", "Тёплый", "Свеча"], "rows": ["По солнцу", "Включено"] }
+      "title": [
+        "Тёплый экран",
+        "*после заката*"
+      ],
+      "sub": [
+        "Вечером Ember делает цвета экрана теплее.",
+        "Утром возвращает обычный оттенок."
+      ],
+      "cards": [
+        [
+          "По солнцу",
+          "Закат и рассвет сами"
+        ],
+        [
+          "Плавно",
+          "Переход за 30 минут"
+        ],
+        [
+          "Офлайн",
+          "Без интернета"
+        ],
+        [
+          "Бесплатно",
+          "Без рекламы"
+        ]
+      ],
+      "screen": {
+        "temperature": "Температура",
+        "status": "Фильтр активен",
+        "presets": [
+          "Мягкий",
+          "Тёплый",
+          "Свеча",
+          "Ночь"
+        ],
+        "strength": "Сила фильтра",
+        "dimming": "Затемнение",
+        "profile": "График суток",
+        "action": "Выключить фильтр"
+      }
     },
-    "buttons": { "android": "Скачать для Android", "whatsNew": "Что нового" },
+    "buttons": {
+      "android": "Скачать для Android",
+      "whatsNew": "Что нового"
+    },
     "features": {
-      "alt": "Возможности: фильтр, расписание, плитка, приватность", "chip": "Возможности", "title": "Тёплый свет — *когда он нужен*",
+      "alt": "Возможности: фильтр, расписание, плитка, приватность",
+      "chip": "Возможности",
+      "title": "Тёплый свет — *когда он нужен*",
       "items": [
-        ["Фильтр", ["Тёплый слой поверх всего экрана.", "Сила и затемнение — ползунками."]],
-        ["Расписание", ["По солнцу или в своё время.", "Фильтр разгорается и гаснет плавно."]],
-        ["Плитка", ["Вкл и выкл из шторки в одно касание.", "Кнопка «Выключить» в уведомлении."]],
-        ["Приватность", ["Нет доступа в интернет вообще.", "Место берётся один раз и не уходит."]]
+        [
+          "Фильтр",
+          [
+            "Тёплый слой поверх всего экрана.",
+            "Сила и затемнение — ползунками."
+          ]
+        ],
+        [
+          "Расписание",
+          [
+            "По солнцу или в своё время.",
+            "Фильтр разгорается и гаснет плавно."
+          ]
+        ],
+        [
+          "Плитка",
+          [
+            "Вкл и выкл из шторки в одно касание.",
+            "Кнопка «Выключить» в уведомлении."
+          ]
+        ],
+        [
+          "Приватность",
+          [
+            "Нет доступа в интернет вообще.",
+            "Место берётся один раз и не уходит."
+          ]
+        ]
       ]
     },
     "presets": {
-      "alt": "Пресеты: Мягкий, Тёплый, Свеча, Ночь", "chip": "Пресеты", "title": "Четыре оттенка — *от мягкого до ночного*",
-      "cols": [["Мягкий", "3400 K"], ["Тёплый", "2700 K"], ["Свеча", "1900 K"], ["Ночь", "1200 K"]]
+      "alt": "Пресеты: Мягкий, Тёплый, Свеча, Ночь",
+      "chip": "Пресеты",
+      "title": "Четыре оттенка — *от мягкого до ночного*",
+      "cols": [
+        [
+          "Мягкий",
+          "3400 K"
+        ],
+        [
+          "Тёплый",
+          "2700 K"
+        ],
+        [
+          "Свеча",
+          "1900 K"
+        ],
+        [
+          "Ночь",
+          "1200 K"
+        ]
+      ]
     },
     "numbers": {
-      "alt": "В цифрах: 1.2 МБ, 0 интернета, 0 рекламы, 4 пресета, 30 минут перехода", "chip": "В цифрах", "title": "Лёгкое, тихое *и приватное*",
-      "items": [["1.2", " МБ", ["размер APK"]], ["0", "", ["доступа", "в интернет"]], ["0", "", ["рекламы", "и трекеров"]], ["4", "", ["пресета", "температуры"]], ["30", " мин", ["плавный", "переход"]]]
+      "alt": "В цифрах: два языка, без интернета и рекламы, четыре пресета, плавный переход",
+      "chip": "В цифрах",
+      "title": "Лёгкое, тихое *и приватное*",
+      "items": [
+        [
+          "2",
+          "",
+          [
+            "языка",
+            "интерфейса"
+          ]
+        ],
+        [
+          "0",
+          "",
+          [
+            "доступа",
+            "в интернет"
+          ]
+        ],
+        [
+          "0",
+          "",
+          [
+            "рекламы",
+            "и трекеров"
+          ]
+        ],
+        [
+          "4",
+          "",
+          [
+            "пресета",
+            "температуры"
+          ]
+        ],
+        [
+          "30",
+          " мин",
+          [
+            "плавный",
+            "переход"
+          ]
+        ]
+      ]
+    },
+    "about": {
+      "title": "О проекте",
+      "subtitle": "Начался 16 октября 2026 года. Бесплатный, без слежки и сбора данных."
+    },
+    "roadmap": {
+      "title": "Дорожная карта",
+      "subtitle": "Совместимость с Android, надёжное расписание и простые настройки."
     }
   },
   "en": {
     "hero": {
       "alt": "Ember — blue light filter for Android",
-      "title": ["A warm screen", "*after sunset*"],
-      "sub": ["Ember removes blue light in the evening and at night —", "easier on the eyes, easier to fall asleep."],
-      "cards": [["Sun-based", "Sunset and sunrise"], ["Smooth", "30-minute fade"], ["Offline", "No internet"], ["Free", "No ads"]],
-      "screen": { "title": "Warm from 19:12", "presets": ["Soft", "Warm", "Candle"], "rows": ["Follow the sun", "Enabled"] }
+      "title": [
+        "A warm screen",
+        "*after sunset*"
+      ],
+      "sub": [
+        "Ember warms the colors on your screen in the evening.",
+        "In the morning, they go back to normal."
+      ],
+      "cards": [
+        [
+          "Sun-based",
+          "Sunset and sunrise"
+        ],
+        [
+          "Smooth",
+          "30-minute fade"
+        ],
+        [
+          "Offline",
+          "No internet"
+        ],
+        [
+          "Free",
+          "No ads"
+        ]
+      ],
+      "screen": {
+        "temperature": "Temperature",
+        "status": "Filter is active",
+        "presets": [
+          "Soft",
+          "Warm",
+          "Candle",
+          "Night"
+        ],
+        "strength": "Filter strength",
+        "dimming": "Dimming",
+        "profile": "Daily profile",
+        "action": "Turn off filter"
+      }
     },
-    "buttons": { "android": "Download for Android", "whatsNew": "What’s new" },
+    "buttons": {
+      "android": "Download for Android",
+      "whatsNew": "What’s new"
+    },
     "features": {
-      "alt": "Features: filter, schedule, tile, privacy", "chip": "Features", "title": "Warm light — *when you need it*",
+      "alt": "Features: filter, schedule, tile, privacy",
+      "chip": "Features",
+      "title": "Warm light — *when you need it*",
       "items": [
-        ["Filter", ["A warm layer over the whole screen.", "Strength and dimming on sliders."]],
-        ["Schedule", ["By the sun or at your own times.", "The filter fades in and out smoothly."]],
-        ["Tile", ["On and off from Quick Settings.", "A “Turn off” button in the notification."]],
-        ["Privacy", ["No internet access at all.", "Location is read once and stays on the phone."]]
+        [
+          "Filter",
+          [
+            "A warm layer over the whole screen.",
+            "Strength and dimming on sliders."
+          ]
+        ],
+        [
+          "Schedule",
+          [
+            "By the sun or at your own times.",
+            "The filter fades in and out smoothly."
+          ]
+        ],
+        [
+          "Tile",
+          [
+            "On and off from Quick Settings.",
+            "A “Turn off” button in the notification."
+          ]
+        ],
+        [
+          "Privacy",
+          [
+            "No internet access at all.",
+            "Location is read once and stays on the phone."
+          ]
+        ]
       ]
     },
     "presets": {
-      "alt": "Presets: Soft, Warm, Candle, Night", "chip": "Presets", "title": "Four tones — *from soft to night*",
-      "cols": [["Soft", "3400 K"], ["Warm", "2700 K"], ["Candle", "1900 K"], ["Night", "1200 K"]]
+      "alt": "Presets: Soft, Warm, Candle, Night",
+      "chip": "Presets",
+      "title": "Four tones — *from soft to night*",
+      "cols": [
+        [
+          "Soft",
+          "3400 K"
+        ],
+        [
+          "Warm",
+          "2700 K"
+        ],
+        [
+          "Candle",
+          "1900 K"
+        ],
+        [
+          "Night",
+          "1200 K"
+        ]
+      ]
     },
     "numbers": {
-      "alt": "By the numbers: 1.2 MB, no internet, 0 ads, 4 presets, 30-minute fade", "chip": "By the numbers", "title": "Light, quiet *and private*",
-      "items": [["1.2", " MB", ["APK size"]], ["0", "", ["internet", "access"]], ["0", "", ["ads", "and trackers"]], ["4", "", ["color", "presets"]], ["30", " min", ["smooth", "fade"]]]
+      "alt": "At a glance: two languages, no internet or ads, four presets, and a gradual transition",
+      "chip": "By the numbers",
+      "title": "Light, quiet *and private*",
+      "items": [
+        [
+          "2",
+          "",
+          [
+            "interface",
+            "languages"
+          ]
+        ],
+        [
+          "0",
+          "",
+          [
+            "internet",
+            "access"
+          ]
+        ],
+        [
+          "0",
+          "",
+          [
+            "ads",
+            "and trackers"
+          ]
+        ],
+        [
+          "4",
+          "",
+          [
+            "color",
+            "presets"
+          ]
+        ],
+        [
+          "30",
+          " min",
+          [
+            "smooth",
+            "fade"
+          ]
+        ]
+      ]
+    },
+    "about": {
+      "title": "About Ember",
+      "subtitle": "Started on October 16, 2026. Free, with no tracking or data collection."
+    },
+    "roadmap": {
+      "title": "Roadmap",
+      "subtitle": "Android compatibility, reliable schedules, and simpler settings."
     }
   }
 }

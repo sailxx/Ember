@@ -100,47 +100,21 @@ svg{fill:#fff}
 text{font-family:"G","Segoe UI",system-ui,sans-serif}
 .m{font-family:"M",ui-monospace,Consolas,monospace}`;
 
-  const style = (fg, fm) => `<style>
-${fontCss(fg, fm)}
-.r{animation:rise .8s cubic-bezier(.2,.8,.2,1) backwards}
-.glow{animation:drift 14s ease-in-out infinite}
-.glow2{animation:drift 18s ease-in-out -6s infinite reverse}
-.blink{animation:blink 1.1s steps(1) infinite}
-.pulse{animation:pulse 2.6s ease-in-out infinite}
-.sweep{animation:sweep 6s ease-in-out infinite}
-@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-@keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(36px,22px)}}
-@keyframes blink{50%{opacity:0}}
-@keyframes pulse{0%,100%{opacity:0}50%{opacity:.22}}
-@keyframes sweep{0%{transform:translateX(-120%)}60%,100%{transform:translateX(220%)}}
-@media (prefers-reduced-motion:reduce){.r,.glow,.glow2,.blink,.pulse,.sweep{animation:none}}
-</style>`;
+  const style = (fg, fm) => `<style>${fontCss(fg, fm)}</style>`;
 
-  const defs = (w, h) => `<defs>
-<radialGradient id="g1" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="${A.glow}" stop-opacity="${A.glowOpacity ?? 0.2}"/><stop offset="1" stop-color="${A.glow}" stop-opacity="0"/></radialGradient>
-<radialGradient id="g2" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="${A.glow2}" stop-opacity=".14"/><stop offset="1" stop-color="${A.glow2}" stop-opacity="0"/></radialGradient>
-<linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1c1c1c"/><stop offset="1" stop-color="#0a0a0a"/></linearGradient>
-<linearGradient id="hl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-<linearGradient id="tg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${A.grad[0]}"/><stop offset="1" stop-color="${A.grad[1]}"/></linearGradient>
-<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d0d0d"/><stop offset="1" stop-color="#000"/></linearGradient>
-<linearGradient id="sw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".07"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-<clipPath id="clip"><rect width="${w}" height="${h}" rx="24"/></clipPath>
+  const defs = () => `<defs>
+<linearGradient id="tg"><stop stop-color="${A.grad[0]}"/><stop offset="1" stop-color="${A.grad[1]}"/></linearGradient>
 </defs>`;
 
-  const frame = (w, h) => `<g clip-path="url(#clip)"><rect width="${w}" height="${h}" fill="url(#bg)"/>
-<circle class="glow" cx="${w * 0.82}" cy="${Math.min(h * 0.2, 120)}" r="${Math.min(h * 0.7, 340)}" fill="url(#g1)"/>
-<circle class="glow2" cx="${w * 0.1}" cy="${h * 0.95}" r="${Math.min(h * 0.6, 300)}" fill="url(#g2)"/>
-<rect class="sweep" x="0" y="0" width="${w * 0.35}" height="${h}" fill="url(#sw)"/></g>
-<rect x=".5" y=".5" width="${w - 1}" height="${h - 1}" rx="24" fill="none" stroke="#242424"/>`;
+  const frame = (w, h) =>
+    `<rect x=".5" y=".5" width="${w - 1}" height="${h - 1}" rx="24" fill="#191817" stroke="#413831"/>`;
 
   /** Плашка: возвращает функцию (fg, fm) → SVG. extraDefs — свои градиенты и клипы. */
   const svg = (w, h, label, body, extraDefs = '') => (fg, fm) =>
-    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(plain(label))}">\n${style(fg, fm)}\n${defs(w, h)}${extraDefs ? `\n<defs>${extraDefs}</defs>` : ''}\n${frame(w, h)}\n${body}\n</svg>\n`;
-
-  const delay = (i) => `style="animation-delay:${(i * 0.09).toFixed(2)}s"`;
+    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(plain(label))}">\n${style(fg, fm)}\n${defs()}${extraDefs ? `\n<defs>${extraDefs}</defs>` : ''}\n${frame(w, h)}\n${body}\n</svg>\n`;
 
   const card = (x, y, w, h, rx = 18) =>
-    `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="url(#cg)" stroke="${P.stroke}"/><rect x="${x + rx}" y="${y + .5}" width="${Math.max(0, w - rx * 2)}" height="1" fill="url(#hl)"/>`;
+    `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="#24211F" stroke="#403630"/>`;
 
   /** Метка-чип: моно, заглавные. check — галочка цвета акцента. */
   function chip(x, y, text, { check = false, upper = true } = {}) {
@@ -158,11 +132,11 @@ ${fontCss(fg, fm)}
 
   /** Заголовок раздела: чип + крупная строка (переносится). Возвращает разметку и y, с которого можно продолжать. */
   function sectionHead(label, title, { x = 40, maxW = 800, size = 32 } = {}) {
-    const c = chip(x, 34, label, { check: true });
+    const c = chip(x, 34, label, { upper: false });
     const ls = wrap(title, maxW, size, 800);
     const lh = size * 1.2;
-    const s = `<g class="r">${c.s}</g>
-<g class="r" ${delay(1)}>${lines(x, 104, ls, { size, weight: 800, lh, spacing: '-.6' })}</g>`;
+    const s = `<g>${c.s}</g>
+<g>${lines(x, 104, ls, { size, weight: 800, lh, spacing: '-.6' })}</g>`;
     return { s, y: 104 + (ls.length - 1) * lh + 28 };
   }
 
@@ -182,7 +156,7 @@ ${fontCss(fg, fm)}
       const ink = primary ? A.on : '#FFFFFF';
       return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="52" viewBox="0 0 ${w} 52" role="img" aria-label="${esc(label)}">
 <style>@font-face{font-family:"G";src:url(data:font/woff2;base64,${fg}) format("woff2");font-weight:100 900}text{font-family:"G","Segoe UI",system-ui,sans-serif}</style>
-<defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${primary ? A.btn[0] : '#202020'}"/><stop offset="1" stop-color="${primary ? A.btn[1] : '#101010'}"/></linearGradient></defs>
+<defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${primary ? A.btn[0] : '#2b2724'}"/><stop offset="1" stop-color="${primary ? A.btn[1] : '#23201e'}"/></linearGradient></defs>
 <rect x=".5" y=".5" width="${w - 1}" height="51" rx="14" fill="url(#b)" stroke="${primary ? A.btn[0] : '#333'}"/>
 <g transform="translate(18 14)" fill="none" stroke="${ink}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</g>
 <text x="50" y="32" font-size="15" font-weight="700" fill="${ink}">${T(label)}</text>
@@ -212,7 +186,7 @@ ${fontCss(fg, fm)}
     }
   }
 
-  return { A, P, T, esc, plain, width, wrap, lineW, spans, lines, fitText, fitSize, one, svg, delay, card, chip, sectionHead, badge, iconBox, button, build, fontCss };
+  return { A, P, T, esc, plain, width, wrap, lineW, spans, lines, fitText, fitSize, one, svg, card, chip, sectionHead, badge, iconBox, button, build, fontCss };
 }
 
 // Иконки 24×24 (stroke)

@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
             }
             EmberTheme(dark) {
                 Screen(
-                    dark, themeMode,
+                    themeMode,
                     onThemeChange = { mode ->
                         themeMode = mode
                         appearance.edit { putString("theme_mode", mode.name) }
@@ -82,7 +82,6 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun Screen(
-    dark: Boolean,
     themeMode: EmberThemeMode,
     onThemeChange: (EmberThemeMode) -> Unit,
     language: EmberLanguage,
@@ -176,7 +175,6 @@ private fun Screen(
     val trustedRendering by EmberAccessibility.rendering.collectAsStateWithLifecycle()
     val rendering = if (trusted) trustedRendering else serviceRunning
     EmberScreen(
-        dark = dark,
         themeMode = themeMode,
         onThemeChange = onThemeChange,
         language = language,

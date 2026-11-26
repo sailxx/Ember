@@ -98,7 +98,7 @@ private val Golos = FontFamily(Font(R.font.golos))
 private val Mono = FontFamily(Font(R.font.jbmono))
 private val NumberStyle = TextStyle(fontFamily = Mono, fontFeatureSettings = "tnum")
 private val DockHeight = 64.dp
-private val DockOffset = 52.dp
+private val DockOffset = 16.dp
 
 @Composable
 internal fun EmberTheme(dark: Boolean, content: @Composable () -> Unit) {
@@ -143,7 +143,6 @@ internal fun EmberTheme(dark: Boolean, content: @Composable () -> Unit) {
 
 @Composable
 internal fun EmberScreen(
-    dark: Boolean,
     themeMode: EmberThemeMode,
     onThemeChange: (EmberThemeMode) -> Unit,
     language: EmberLanguage,
@@ -179,6 +178,9 @@ internal fun EmberScreen(
             drawLayer(backdrop)
         }
 
+    var temperaturePreview by remember { mutableStateOf<Float?>(null) }
+    val temperature = temperaturePreview ?: config.kelvin.toFloat()
+    val gradient = temperatureGradient(temperature, active)
     val scheduleSummary = if (config.auto) timeRange(window) else stringResource(R.string.all_day)
     val scheduleMode = when {
         !config.auto -> stringResource(R.string.always)
@@ -196,7 +198,23 @@ internal fun EmberScreen(
                     .padding(top = 8.dp, bottom = DockOffset + DockHeight + 24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                InstrumentPanel(config.kelvin, active, status) { value -> onConfigChange { copy(kelvin = value) } }
+                InstrumentPanel(
+                    temperature = temperature,
+                    selectedKelvin = config.kelvin,
+                    status = status,
+                    gradient = gradient,
+                    onSlide = { temperaturePreview = it },
+                    onSlideFinished = {
+                        temperaturePreview?.let { value ->
+                            onConfigChange { copy(kelvin = (value / 50).roundToInt() * 50) }
+                        }
+                        temperaturePreview = null
+                    },
+                    onPreset = { value ->
+                        temperaturePreview = null
+                        onConfigChange { copy(kelvin = value) }
+                    },
+                )
 
                 if (config.enabled && !hasAccess) {
                     TextButton(onClick = { showAccess = true }) { Text(stringResource(R.string.set_up_access)) }
@@ -241,7 +259,7 @@ internal fun EmberScreen(
             Modifier.align(Alignment.BottomCenter).widthIn(max = 492.dp).fillMaxWidth()
                 .padding(start = 8.dp, end = 8.dp, bottom = DockOffset),
         ) {
-            FilterDock(dark, config.enabled, backdrop, { contentPosition }) {
+            FilterDock(config.enabled, gradient, backdrop, { contentPosition }) {
                 onConfigChange { copy(enabled = !enabled) }
             }
         }
@@ -366,51 +384,67 @@ private fun SettingsBar(
     }
 }
 
+private fun temperatureGradient(kelvin: Float, active: Boolean): List<Color> {
+    val amber = listOf(Color(0xFF70591E), Color(0xFF423817))
+    val copper = listOf(Color(0xFF804521), Color(0xFF4B2A1C))
+    val ember = listOf(Color(0xFF873448), Color(0xFF4E2036))
+    val warmPreset = Presets[1].second
+    val min = Presets.last().second
+    val max = Presets.first().second
+    val temperature = kelvin.coerceIn(min.toFloat(), max.toFloat())
+    val colors = if (temperature >= warmPreset) {
+        val fraction = (temperature - warmPreset) / (max - warmPreset)
+        copper.zip(amber) { start, end -> lerp(start, end, fraction) }
+    } else {
+        val fraction = (warmPreset - temperature) / (warmPreset - min)
+        copper.zip(ember) { start, end -> lerp(start, end, fraction) }
+    }
+    return if (active) colors else colors.map { lerp(Color(0xFF242327), it, .72f) }
+}
+
 @Composable
-private fun InstrumentPanel(kelvin: Int, active: Boolean, status: String, onChange: (Int) -> Unit) {
+private fun InstrumentPanel(
+    temperature: Float,
+    selectedKelvin: Int,
+    status: String,
+    gradient: List<Color>,
+    onSlide: (Float) -> Unit,
+    onSlideFinished: () -> Unit,
+    onPreset: (Int) -> Unit,
+) {
     val temperatureLabel = stringResource(R.string.temperature)
     val ink = Color(0xFFFFF7F0)
     val min = Presets.last().second
     val max = Presets.first().second
-    val warmth = (max - kelvin.coerceIn(min, max)).toFloat() / (max - min)
-    val warmStart = lerp(Color(0xFF79531F), Color(0xFFA33C24), warmth)
-    val warmEnd = lerp(Color(0xFF473518), Color(0xFF541D21), warmth)
-    val gradient = if (active) {
-        listOf(warmStart, warmEnd)
-    } else {
-        listOf(
-            lerp(Color(0xFF34343B), warmStart, .32f),
-            lerp(Color(0xFF212127), warmEnd, .32f),
-        )
-    }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Column(
             Modifier.fillMaxWidth().background(
                 Brush.linearGradient(gradient), PanelShape,
-            ).border(1.dp, Color.White.copy(alpha = .23f), PanelShape).padding(horizontal = 18.dp, vertical = 14.dp),
+            ).padding(horizontal = 18.dp, vertical = 14.dp),
         ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(Modifier.size(30.dp).background(Color.White.copy(alpha = .15f), CircleShape), contentAlignment = Alignment.Center) {
-                    Box(Modifier.size(10.dp).border(1.dp, ink, CircleShape))
-                }
-                Text(stringResource(R.string.temperature), Modifier.weight(1f), color = ink, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.End)) {
-                    Box(Modifier.size(6.dp).then(if (active) Modifier.background(ink, CircleShape) else Modifier.border(1.dp, ink, CircleShape)))
-                    Text(status, color = ink, fontSize = 11.sp, lineHeight = 14.sp, style = NumberStyle, textAlign = TextAlign.End)
-                }
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.Top,
+            ) {
+                Text(temperatureLabel, Modifier.weight(1f), color = ink.copy(alpha = .86f), fontSize = 14.sp)
+                Text(
+                    status, Modifier.weight(1f), color = ink, fontSize = 12.sp,
+                    lineHeight = 16.sp, textAlign = TextAlign.End,
+                )
             }
-            BoxWithConstraints(Modifier.fillMaxWidth().padding(top = 4.dp), contentAlignment = Alignment.Center) {
+            BoxWithConstraints(Modifier.fillMaxWidth().padding(top = 8.dp), contentAlignment = Alignment.Center) {
                 val fontSize = (maxWidth.value / (3.1f * LocalDensity.current.fontScale)).coerceAtMost(62f)
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text(kelvin.toString(), color = ink, fontSize = fontSize.sp, lineHeight = (fontSize + 4).sp,
+                    Text(temperature.roundToInt().toString(), color = ink, fontSize = fontSize.sp, lineHeight = (fontSize + 4).sp,
                         fontFamily = Golos, fontWeight = FontWeight.Bold, letterSpacing = (-3).sp)
                     Text(" K", Modifier.padding(bottom = 7.dp), color = ink, fontSize = (fontSize * .35f).sp, style = NumberStyle)
                 }
             }
             Slider(
-                value = kelvin.coerceIn(min, max).toFloat(),
-                onValueChange = { onChange((it / 50).roundToInt() * 50) },
+                value = temperature.coerceIn(min.toFloat(), max.toFloat()),
+                onValueChange = onSlide,
+                onValueChangeFinished = onSlideFinished,
                 valueRange = min.toFloat()..max.toFloat(),
                 colors = SliderDefaults.colors(thumbColor = ink, activeTrackColor = ink, inactiveTrackColor = ink.copy(alpha = .28f)),
                 modifier = Modifier.fillMaxWidth().semantics { contentDescription = temperatureLabel },
@@ -420,32 +454,27 @@ private fun InstrumentPanel(kelvin: Int, active: Boolean, status: String, onChan
                 Text("$max K", color = ink, fontSize = 10.sp, style = NumberStyle)
             }
         }
-        PresetScale(kelvin, onChange)
+        PresetScale(selectedKelvin, onPreset)
     }
 }
 
 @Composable
 private fun FilterDock(
-    dark: Boolean,
     enabled: Boolean,
+    temperatureColors: List<Color>,
     backdrop: GraphicsLayer?,
     contentPosition: () -> Offset,
     onClick: () -> Unit,
 ) {
-    val gradient = when {
-        dark && enabled -> listOf(Color(0xCE795340), Color(0xE0442B23))
-        dark -> listOf(Color(0xCE515153), Color(0xE02D2D30))
-        enabled -> listOf(Color(0xECFFF5EA), Color(0xDDEACABA))
-        else -> listOf(Color(0xECFFFFFF), Color(0xDDE0E0DF))
-    }
-    val ink = if (dark) Color(0xFFFFF7F0) else Color(0xFF2E1A13)
-    val lens = if (dark) Color.White.copy(alpha = .12f) else Color.White.copy(alpha = .55f)
+    val midpoint = lerp(temperatureColors.first(), temperatureColors.last(), .5f)
+    val gradient = temperatureColors.map { lerp(it, midpoint, .58f).copy(alpha = .97f) }
+    val ink = Color(0xFFFFF7F0)
     var dockPosition by remember { mutableStateOf(Offset.Zero) }
     Box(
-        Modifier.fillMaxWidth().heightIn(min = DockHeight).shadow(10.dp, PanelShape)
+        Modifier.fillMaxWidth().heightIn(min = DockHeight).shadow(4.dp, PanelShape)
             .onGloballyPositioned { dockPosition = it.positionInRoot() }
             .clip(PanelShape)
-            .border(1.dp, ink.copy(alpha = .27f), PanelShape)
+            .border(1.dp, ink.copy(alpha = .18f), PanelShape)
             .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -457,10 +486,7 @@ private fun FilterDock(
         }
         Box(Modifier.matchParentSize().background(Brush.linearGradient(gradient)))
         Row(
-            Modifier.fillMaxWidth().padding(5.dp).clip(RoundedCornerShape(22.dp))
-                .background(Brush.verticalGradient(listOf(lens, Color.Transparent)))
-                .border(1.dp, lens, RoundedCornerShape(22.dp))
-                .padding(horizontal = 14.dp, vertical = 13.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 13.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -495,27 +521,29 @@ private fun RowHeadline(label: String, value: String) {
 @Composable
 private fun PresetScale(kelvin: Int, onChange: (Int) -> Unit) {
     val colors = MaterialTheme.colorScheme
-    Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Presets.chunked(2).forEach { presets ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                presets.forEach { (label, value) ->
-                    val selected = value == kelvin
-                    val edge = if (selected) Color(0xFFB87048) else colors.outlineVariant
-                    Row(
-                        Modifier.weight(1f).heightIn(min = 48.dp).clip(ControlShape)
-                            .background(if (selected) colors.surfaceContainerHighest else colors.surface)
-                            .border(1.dp, edge, ControlShape)
-                            .selectable(selected, role = Role.RadioButton, onClick = { onChange(value) })
-                            .padding(horizontal = 9.dp, vertical = 5.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(Modifier.size(8.dp).then(
-                            if (selected) Modifier.background(Color(0xFFFFA76E), CircleShape)
-                            else Modifier.border(1.dp, Color(0xFFC18766), CircleShape),
-                        ))
-                        Text(stringResource(label), Modifier.weight(1f), color = colors.onSurface, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                        Text("$value K", color = colors.onSurfaceVariant, fontSize = 10.sp, style = NumberStyle)
+    BoxWithConstraints(Modifier.fillMaxWidth().selectableGroup()) {
+        val columns = if (maxWidth >= 312.dp && LocalDensity.current.fontScale <= 1.25f) 4 else 2
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Presets.chunked(columns).forEach { presets ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    presets.forEach { (label, value) ->
+                        val selected = value == kelvin
+                        val edge = if (selected) Color(0xFFB87048) else colors.outlineVariant
+                        Box(
+                            Modifier.weight(1f).heightIn(min = 48.dp).clip(ControlShape)
+                                .background(if (selected) colors.primaryContainer else colors.surface)
+                                .border(1.dp, edge, ControlShape)
+                                .selectable(selected, role = Role.RadioButton, onClick = { onChange(value) })
+                                .padding(horizontal = 4.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                stringResource(label),
+                                color = if (selected) colors.onPrimaryContainer else colors.onSurface,
+                                fontSize = 13.sp,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
                     }
                 }
             }
