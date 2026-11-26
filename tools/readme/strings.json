@@ -158,7 +158,7 @@
     },
     "roadmap": {
       "title": "Дорожная карта",
-      "subtitle": "Совместимость с Android, надёжное расписание и простые настройки."
+      "subtitle": "От первого фильтра в 0.1 до Ember 1.0."
     }
   },
   "en": {
@@ -320,7 +320,7 @@
     },
     "roadmap": {
       "title": "Roadmap",
-      "subtitle": "Android compatibility, reliable schedules, and simpler settings."
+      "subtitle": "From the first filter in 0.1 to Ember 1.0."
     }
   }
 }

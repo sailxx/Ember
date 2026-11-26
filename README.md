@@ -57,9 +57,15 @@ Your settings stay on your phone. If you choose to use your location for the sch
 
 <img src="assets/readme/roadmap-en.svg" width="100%" alt="Roadmap">
 
-- Check how the filter behaves after a reboot and on more Android phones.
-- Make the schedule easier to set up and clarify when the filter will turn on.
-- Improve readability at larger text sizes and make the controls easier to use with TalkBack.
+- [**0.1**](https://github.com/sailxx/Ember/releases/tag/v0.1) — The first version warmed the screen, followed sunset and sunrise, and showed the full day on a chart.
+- [**0.2**](https://github.com/sailxx/Ember/releases/tag/v0.2) — The accessibility service let taps pass through the filter.
+- [**0.3**](https://github.com/sailxx/Ember/releases/tag/v0.3) — Added custom on and off times and made it easier for Ember to find your location.
+- [**0.4**](https://github.com/sailxx/Ember/releases/tag/v0.4) — Redesigned the daily chart and added clearer feedback when you tap a control.
+- [**0.5**](https://github.com/sailxx/Ember/releases/tag/v0.5) — Switched from a debug key to Ember’s own key for signing releases.
+- [**0.6**](https://github.com/sailxx/Ember/releases/tag/v0.6) — Added a temperature dial, a choice of light or dark theme, and tests for the daily schedule.
+- [**0.7**](https://github.com/sailxx/Ember/releases/tag/v0.7) — Brought temperature and filter controls onto one screen, moved the schedule into a dialog, and added a floating switch.
+- [**0.8**](https://github.com/sailxx/Ember/releases/tag/v0.8) — Made English the default with Russian in Settings, added the white-circle icon, and let the accessibility service apply the filter on its own.
+- [**1.0**](https://github.com/sailxx/Ember/releases/tag/v1.0) — Simplified the temperature card and smoothed the slider. The card and filter button now change color together as you drag.
 
 <details>
 <summary><b>Install</b></summary>
