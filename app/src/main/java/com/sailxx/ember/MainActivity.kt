@@ -1,6 +1,7 @@
 package com.sailxx.ember
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.location.LocationManager
@@ -23,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.edit
 import androidx.core.location.LocationManagerCompat
 import androidx.core.net.toUri
@@ -32,10 +34,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(EmberLanguage.load(newBase).applyTo(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val appearance = getPreferences(MODE_PRIVATE)
+        val language = EmberLanguage.load(this)
         setContent {
             var themeMode by rememberSaveable {
                 mutableStateOf(
@@ -54,17 +61,33 @@ class MainActivity : ComponentActivity() {
                 bars.isAppearanceLightNavigationBars = !dark
             }
             EmberTheme(dark) {
-                Screen(dark, themeMode) { mode ->
-                    themeMode = mode
-                    appearance.edit { putString("theme_mode", mode.name) }
-                }
+                Screen(
+                    dark, themeMode,
+                    onThemeChange = { mode ->
+                        themeMode = mode
+                        appearance.edit { putString("theme_mode", mode.name) }
+                    },
+                    language = language,
+                    onLanguageChange = { next ->
+                        if (next != language) {
+                            next.save(this@MainActivity)
+                            recreate()
+                        }
+                    },
+                )
             }
         }
     }
 }
 
 @Composable
-private fun Screen(dark: Boolean, themeMode: EmberThemeMode, onThemeChange: (EmberThemeMode) -> Unit) {
+private fun Screen(
+    dark: Boolean,
+    themeMode: EmberThemeMode,
+    onThemeChange: (EmberThemeMode) -> Unit,
+    language: EmberLanguage,
+    onLanguageChange: (EmberLanguage) -> Unit,
+) {
     val ctx = LocalContext.current
     var c by remember { mutableStateOf(Prefs.load(ctx)) }
     var canDraw by remember { mutableStateOf(Settings.canDrawOverlays(ctx)) }
@@ -111,14 +134,14 @@ private fun Screen(dark: Boolean, themeMode: EmberThemeMode, onThemeChange: (Emb
             notify.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
-    var placeNote by remember { mutableStateOf<String?>(null) }
+    var placeNote by remember { mutableStateOf<Int?>(null) }
     var cancelLocation by remember { mutableStateOf<(() -> Unit)?>(null) }
     DisposableEffect(Unit) {
         onDispose { cancelLocation?.invoke() }
     }
     val place = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { res ->
         if (res.values.none { it }) {
-            placeNote = "Нет доступа к местоположению — нажмите, чтобы открыть настройки Ember"
+            placeNote = R.string.location_denied
             return@rememberLauncherForActivityResult
         }
         locating = true
@@ -127,8 +150,8 @@ private fun Screen(dark: Boolean, themeMode: EmberThemeMode, onThemeChange: (Emb
             cancelLocation = null
             locating = false
             placeNote = when (err) {
-                Place.Error.OFF -> "Геолокация выключена — включите её и нажмите ещё раз"
-                Place.Error.NO_FIX -> "Не удалось определить место. Попробуйте ещё раз или задайте время вручную"
+                Place.Error.OFF -> R.string.location_off
+                Place.Error.NO_FIX -> R.string.location_no_fix
                 null -> null
             }
             if (loc != null) set { copy(lat = loc.latitude, lon = loc.longitude) }
@@ -138,7 +161,7 @@ private fun Screen(dark: Boolean, themeMode: EmberThemeMode, onThemeChange: (Emb
         if (locating) return
         val lm = ctx.getSystemService(LocationManager::class.java)
         when {
-            placeNote?.startsWith("Нет доступа") == true -> ctx.startActivity(
+            placeNote == R.string.location_denied -> ctx.startActivity(
                 Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:${ctx.packageName}".toUri())
             ).also { placeNote = null }
             !LocationManagerCompat.isLocationEnabled(lm) -> ctx.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
@@ -150,24 +173,28 @@ private fun Screen(dark: Boolean, themeMode: EmberThemeMode, onThemeChange: (Emb
     val status = FilterState.current(c, minute, window, trusted, canDraw)
     val level = Schedule.level(c, minute, window)
     val ready = canDraw || trusted
+    val trustedRendering by EmberAccessibility.rendering.collectAsStateWithLifecycle()
+    val rendering = if (trusted) trustedRendering else serviceRunning
     EmberScreen(
         dark = dark,
         themeMode = themeMode,
         onThemeChange = onThemeChange,
+        language = language,
+        onLanguageChange = onLanguageChange,
         config = c,
         window = window,
         minute = minute,
         status = when {
-            status.alpha > 0f && !serviceRunning -> "Фильтр не запущен"
-            status.alpha > 0f && level >= 1f -> "Фильтр активен"
-            status.alpha > 0f -> "Плавный переход · ${(level * 100).toInt()}%"
-            else -> status.text
+            status.alpha > 0f && !rendering -> stringResource(R.string.filter_not_running)
+            status.alpha > 0f && level >= 1f -> stringResource(R.string.filter_active)
+            status.alpha > 0f -> stringResource(R.string.fade_progress, (level * 100).toInt())
+            else -> stringResource(status.text, *status.args.toTypedArray())
         },
-        active = status.alpha > 0f && serviceRunning,
+        active = status.alpha > 0f && rendering,
         hasAccess = ready,
         trusted = trusted,
         locating = locating,
-        placeNote = placeNote,
+        placeNote = placeNote?.let { stringResource(it) },
         onLocate = ::onPlaceClick,
         onAccessibilitySettings = { ctx.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) },
         onOverlaySettings = {

@@ -18,11 +18,16 @@ import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /** Держит полноэкранный тёплый оверлей и раз в 30 секунд пересчитывает его по расписанию. */
 class FilterService : Service(), SharedPreferences.OnSharedPreferenceChangeListener {
+    private val scope = CoroutineScope(Dispatchers.Main)
     private lateinit var wm: WindowManager
     private var view: View? = null
     private var lastText = ""
@@ -40,13 +45,13 @@ class FilterService : Service(), SharedPreferences.OnSharedPreferenceChangeListe
     override fun onCreate() {
         super.onCreate()
         wm = getSystemService(WindowManager::class.java)
-        getSystemService(NotificationManager::class.java).createNotificationChannel(
-            NotificationChannel(CHANNEL, "Фильтр", NotificationManager.IMPORTANCE_LOW).apply { setShowBadge(false) }
-        )
-        val n = notification("Ember")
+        val localized = EmberLanguage.load(this).applyTo(this)
+        updateChannel(localized)
+        val n = notification(localized, localized.getString(R.string.app_name))
         if (Build.VERSION.SDK_INT >= 34) startForeground(ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         else startForeground(ID, n)
         Prefs.sp(this).registerOnSharedPreferenceChangeListener(this)
+        scope.launch { EmberAccessibility.connected.collect { update() } }
         handler.postDelayed(tick, 30_000)
     }
 
@@ -75,17 +80,14 @@ class FilterService : Service(), SharedPreferences.OnSharedPreferenceChangeListe
         val w = Schedule.window(c)
         val a11y = EmberAccessibility.instance
         val state = FilterState.current(c, Schedule.nowMinute(), w, a11y != null, Settings.canDrawOverlays(this))
-        if (a11y != null) {
-            // Доверенное окно службы спец. возможностей: касания проходят всегда, плотность не ограничена 0.8.
-            removeView()
-            if (state.alpha == 0f) a11y.hide() else a11y.show(state.color, state.alpha)
-        } else {
-            if (state.alpha == 0f) removeView() else showView(state.color, state.alpha)
-        }
+        if (a11y != null || state.alpha == 0f) removeView() else showView(state.color, state.alpha)
 
-        if (state.text != lastText) {
-            lastText = state.text
-            getSystemService(NotificationManager::class.java).notify(ID, notification(state.text))
+        val localized = EmberLanguage.load(this).applyTo(this)
+        val text = localized.getString(state.text, *state.args.toTypedArray())
+        if (text != lastText) {
+            lastText = text
+            updateChannel(localized)
+            getSystemService(NotificationManager::class.java).notify(ID, notification(localized, text))
         }
     }
 
@@ -101,7 +103,14 @@ class FilterService : Service(), SharedPreferences.OnSharedPreferenceChangeListe
         view = null
     }
 
-    private fun notification(text: String): Notification {
+    private fun updateChannel(localized: Context) {
+        getSystemService(NotificationManager::class.java).createNotificationChannel(
+            NotificationChannel(CHANNEL, localized.getString(R.string.filter_channel), NotificationManager.IMPORTANCE_LOW)
+                .apply { setShowBadge(false) }
+        )
+    }
+
+    private fun notification(localized: Context, text: String): Notification {
         val open = PendingIntent.getActivity(
             this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE,
         )
@@ -110,11 +119,11 @@ class FilterService : Service(), SharedPreferences.OnSharedPreferenceChangeListe
         )
         return Notification.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_tile)
-            .setContentTitle("Ember")
+            .setContentTitle(localized.getString(R.string.app_name))
             .setContentText(text)
             .setContentIntent(open)
             .setOngoing(true)
-            .addAction(Notification.Action.Builder(null, "Выключить", off).build())
+            .addAction(Notification.Action.Builder(null, localized.getString(R.string.notification_off), off).build())
             .build()
     }
 
@@ -124,7 +133,7 @@ class FilterService : Service(), SharedPreferences.OnSharedPreferenceChangeListe
         handler.removeCallbacks(applyPreferences)
         Prefs.sp(this).unregisterOnSharedPreferenceChangeListener(this)
         removeView()
-        EmberAccessibility.instance?.hide()
+        scope.cancel()
         super.onDestroy()
     }
 

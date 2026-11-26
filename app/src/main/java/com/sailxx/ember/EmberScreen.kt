@@ -48,6 +48,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -58,6 +59,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -82,13 +84,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 
-internal enum class EmberThemeMode(val title: String) {
-    System("Как на устройстве"),
-    Light("Светлая"),
-    Dark("Тёмная"),
+internal enum class EmberThemeMode(val title: Int) {
+    System(R.string.theme_system),
+    Light(R.string.theme_light),
+    Dark(R.string.theme_dark),
 }
 
-private val Presets = listOf("Мягкий" to 3400, "Тёплый" to 2700, "Свеча" to 1900, "Ночь" to 1200)
+private val Presets = listOf(R.string.preset_soft to 3400, R.string.preset_warm to 2700, R.string.preset_candle to 1900, R.string.preset_night to 1200)
 private val FadeOptions = listOf(0, 15, 30, 60)
 private val ControlShape = RoundedCornerShape(16.dp)
 private val PanelShape = RoundedCornerShape(28.dp)
@@ -144,6 +146,8 @@ internal fun EmberScreen(
     dark: Boolean,
     themeMode: EmberThemeMode,
     onThemeChange: (EmberThemeMode) -> Unit,
+    language: EmberLanguage,
+    onLanguageChange: (EmberLanguage) -> Unit,
     config: Config,
     window: Window,
     minute: Int,
@@ -175,18 +179,18 @@ internal fun EmberScreen(
             drawLayer(backdrop)
         }
 
-    val scheduleSummary = if (config.auto) timeRange(window) else "24 часа"
+    val scheduleSummary = if (config.auto) timeRange(window) else stringResource(R.string.all_day)
     val scheduleMode = when {
-        !config.auto -> "Всегда"
-        config.sun -> "По солнцу"
-        else -> "По времени"
+        !config.auto -> stringResource(R.string.always)
+        config.sun -> stringResource(R.string.sun_schedule)
+        else -> stringResource(R.string.manual_schedule)
     }
     Box(
         Modifier.fillMaxSize().background(colors.background).safeDrawingPadding(),
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(Modifier.widthIn(max = 492.dp).fillMaxSize().then(captureBackdrop).padding(horizontal = 16.dp)) {
-            ThemeBar(themeMode, onThemeChange)
+            SettingsBar(themeMode, onThemeChange, language, onLanguageChange)
             Column(
                 Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())
                     .padding(top = 8.dp, bottom = DockOffset + DockHeight + 24.dp),
@@ -195,24 +199,24 @@ internal fun EmberScreen(
                 InstrumentPanel(config.kelvin, active, status) { value -> onConfigChange { copy(kelvin = value) } }
 
                 if (config.enabled && !hasAccess) {
-                    TextButton(onClick = { showAccess = true }) { Text("Настроить доступ") }
+                    TextButton(onClick = { showAccess = true }) { Text(stringResource(R.string.set_up_access)) }
                 }
 
                 BoxWithConstraints(Modifier.fillMaxWidth().panel(colors.surface, colors.outlineVariant).padding(12.dp)) {
                     if (maxWidth >= 272.dp && LocalDensity.current.fontScale <= 1.25f) {
                         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                             Box(Modifier.weight(1f)) {
-                                SliderSetting("Сила фильтра", config.strength) { value -> onConfigChange { copy(strength = value) } }
+                                SliderSetting(stringResource(R.string.strength), config.strength) { value -> onConfigChange { copy(strength = value) } }
                             }
                             Box(Modifier.weight(1f)) {
-                                SliderSetting("Затемнение", config.dim) { value -> onConfigChange { copy(dim = value) } }
+                                SliderSetting(stringResource(R.string.dimming), config.dim) { value -> onConfigChange { copy(dim = value) } }
                             }
                         }
                     } else {
                         Column {
-                            SliderSetting("Сила фильтра", config.strength) { value -> onConfigChange { copy(strength = value) } }
+                            SliderSetting(stringResource(R.string.strength), config.strength) { value -> onConfigChange { copy(strength = value) } }
                             QuietDivider()
-                            SliderSetting("Затемнение", config.dim) { value -> onConfigChange { copy(dim = value) } }
+                            SliderSetting(stringResource(R.string.dimming), config.dim) { value -> onConfigChange { copy(dim = value) } }
                         }
                     }
                 }
@@ -221,14 +225,14 @@ internal fun EmberScreen(
                     Modifier.fillMaxWidth().panel(colors.surface, colors.outlineVariant).padding(14.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    RowHeadline("График суток", scheduleSummary)
+                    RowHeadline(stringResource(R.string.day_profile), scheduleSummary)
                     DayProfile(config, window, minute)
                     QuietDivider()
-                    SettingLine("Расписание", "$scheduleMode  ›", onClick = { showSchedule = true })
+                    SettingLine(stringResource(R.string.schedule), "$scheduleMode  ›", onClick = { showSchedule = true })
                 }
 
                 if (hasAccess && !trusted) {
-                    TextButton(onClick = { showAccess = true }) { Text("Разрешения фильтра") }
+                    TextButton(onClick = { showAccess = true }) { Text(stringResource(R.string.permissions)) }
                 }
             }
         }
@@ -246,29 +250,29 @@ internal fun EmberScreen(
     if (showSchedule) {
         AlertDialog(
             onDismissRequest = { showSchedule = false },
-            title = { Text("Расписание") },
+            title = { Text(stringResource(R.string.schedule)) },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     ScheduleSettings(config, window, locating, placeNote, onLocate, onConfigChange) { timeField = it }
                 }
             },
-            confirmButton = { TextButton(onClick = { showSchedule = false }) { Text("Готово") } },
+            confirmButton = { TextButton(onClick = { showSchedule = false }) { Text(stringResource(R.string.done)) } },
         )
     }
 
     if (showAccess) {
         AlertDialog(
             onDismissRequest = { showAccess = false },
-            title = { Text("Разрешения фильтра") },
+            title = { Text(stringResource(R.string.permissions)) },
             text = {
-                Text("Разрешите Ember менять оттенок поверх приложений. Служба спецвозможностей позволяет нажимать на элементы под фильтром.")
+                Text(stringResource(R.string.access_help))
             },
             confirmButton = {
                 TextButton(onClick = {
                     showAccess = false
                     onAccessibilitySettings()
                 }) {
-                    Text("Спецвозможности")
+                    Text(stringResource(R.string.accessibility))
                 }
             },
             dismissButton = {
@@ -276,7 +280,7 @@ internal fun EmberScreen(
                     showAccess = false
                     onOverlaySettings()
                 }) {
-                    Text("Поверх окон")
+                    Text(stringResource(R.string.overlay))
                 }
             },
         )
@@ -285,7 +289,7 @@ internal fun EmberScreen(
     timeField?.let { field ->
         val start = field == "on"
         TimeDialog(
-            title = if (start) "Включать в" else "Выключать в",
+            title = if (start) stringResource(R.string.turn_on_at) else stringResource(R.string.turn_off_at),
             minute = if (start) config.on else config.off,
             onDismiss = { timeField = null },
             onPick = { value ->
@@ -299,8 +303,14 @@ internal fun EmberScreen(
 private fun Modifier.panel(fill: Color, border: Color) = background(fill, PanelShape).border(1.dp, border, PanelShape)
 
 @Composable
-private fun ThemeBar(mode: EmberThemeMode, onChange: (EmberThemeMode) -> Unit) {
+private fun SettingsBar(
+    mode: EmberThemeMode,
+    onChange: (EmberThemeMode) -> Unit,
+    language: EmberLanguage,
+    onLanguageChange: (EmberLanguage) -> Unit,
+) {
     val colors = MaterialTheme.colorScheme
+    val settingsLabel = stringResource(R.string.settings)
     var open by remember { mutableStateOf(false) }
     Row(
         Modifier.fillMaxWidth().heightIn(min = 56.dp),
@@ -314,7 +324,7 @@ private fun ThemeBar(mode: EmberThemeMode, onChange: (EmberThemeMode) -> Unit) {
             Text("Ember", color = colors.onSurface, fontSize = 23.sp, style = NumberStyle, fontWeight = FontWeight.Bold)
         }
         Box {
-            IconButton(onClick = { open = true }, modifier = Modifier.semantics { contentDescription = "Тема оформления" }) {
+            IconButton(onClick = { open = true }, modifier = Modifier.semantics { contentDescription = settingsLabel }) {
                 Canvas(Modifier.size(22.dp)) {
                     for ((y, knob) in listOf(.32f to .66f, .68f to .34f)) {
                         drawLine(colors.onSurface, Offset(1.dp.toPx(), size.height * y),
@@ -326,11 +336,29 @@ private fun ThemeBar(mode: EmberThemeMode, onChange: (EmberThemeMode) -> Unit) {
                 }
             }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                Text(
+                    stringResource(R.string.theme),
+                    Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    color = colors.onSurfaceVariant,
+                )
                 EmberThemeMode.entries.forEach { option ->
                     DropdownMenuItem(
-                        text = { Text(option.title, color = if (mode == option) colors.primary else colors.onSurface) },
+                        text = { Text(stringResource(option.title), color = if (mode == option) colors.primary else colors.onSurface) },
                         modifier = Modifier.semantics { selected = mode == option },
                         onClick = { open = false; onChange(option) },
+                    )
+                }
+                HorizontalDivider()
+                Text(
+                    stringResource(R.string.language),
+                    Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    color = colors.onSurfaceVariant,
+                )
+                EmberLanguage.entries.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.label, color = if (language == option) colors.primary else colors.onSurface) },
+                        modifier = Modifier.semantics { selected = language == option },
+                        onClick = { open = false; onLanguageChange(option) },
                     )
                 }
             }
@@ -340,20 +368,32 @@ private fun ThemeBar(mode: EmberThemeMode, onChange: (EmberThemeMode) -> Unit) {
 
 @Composable
 private fun InstrumentPanel(kelvin: Int, active: Boolean, status: String, onChange: (Int) -> Unit) {
+    val temperatureLabel = stringResource(R.string.temperature)
     val ink = Color(0xFFFFF7F0)
     val min = Presets.last().second
     val max = Presets.first().second
+    val warmth = (max - kelvin.coerceIn(min, max)).toFloat() / (max - min)
+    val warmStart = lerp(Color(0xFF79531F), Color(0xFFA33C24), warmth)
+    val warmEnd = lerp(Color(0xFF473518), Color(0xFF541D21), warmth)
+    val gradient = if (active) {
+        listOf(warmStart, warmEnd)
+    } else {
+        listOf(
+            lerp(Color(0xFF34343B), warmStart, .32f),
+            lerp(Color(0xFF212127), warmEnd, .32f),
+        )
+    }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Column(
             Modifier.fillMaxWidth().background(
-                Brush.linearGradient(listOf(Color(0xFFB95113), Color(0xFF77310E))), PanelShape,
+                Brush.linearGradient(gradient), PanelShape,
             ).border(1.dp, Color.White.copy(alpha = .23f), PanelShape).padding(horizontal = 18.dp, vertical = 14.dp),
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(Modifier.size(30.dp).background(Color.White.copy(alpha = .15f), CircleShape), contentAlignment = Alignment.Center) {
                     Box(Modifier.size(10.dp).border(1.dp, ink, CircleShape))
                 }
-                Text("Температура", Modifier.weight(1f), color = ink, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.temperature), Modifier.weight(1f), color = ink, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.End)) {
                     Box(Modifier.size(6.dp).then(if (active) Modifier.background(ink, CircleShape) else Modifier.border(1.dp, ink, CircleShape)))
@@ -373,7 +413,7 @@ private fun InstrumentPanel(kelvin: Int, active: Boolean, status: String, onChan
                 onValueChange = { onChange((it / 50).roundToInt() * 50) },
                 valueRange = min.toFloat()..max.toFloat(),
                 colors = SliderDefaults.colors(thumbColor = ink, activeTrackColor = ink, inactiveTrackColor = ink.copy(alpha = .28f)),
-                modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Температура" },
+                modifier = Modifier.fillMaxWidth().semantics { contentDescription = temperatureLabel },
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("$min K", color = ink, fontSize = 10.sp, style = NumberStyle)
@@ -430,7 +470,7 @@ private fun FilterDock(
                     size = Size(size.width - 2 * stroke, size.height - 2 * stroke), style = Stroke(stroke, cap = StrokeCap.Round))
                 drawLine(ink, Offset(center.x, stroke), Offset(center.x, center.y), stroke, StrokeCap.Round)
             }
-            Text(if (enabled) "Выключить фильтр" else "Включить фильтр", color = ink, fontSize = 16.sp,
+            Text(if (enabled) stringResource(R.string.disable_filter) else stringResource(R.string.enable_filter), color = ink, fontSize = 16.sp,
                 fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         }
     }
@@ -474,7 +514,7 @@ private fun PresetScale(kelvin: Int, onChange: (Int) -> Unit) {
                             if (selected) Modifier.background(Color(0xFFFFA76E), CircleShape)
                             else Modifier.border(1.dp, Color(0xFFC18766), CircleShape),
                         ))
-                        Text(label, Modifier.weight(1f), color = colors.onSurface, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(label), Modifier.weight(1f), color = colors.onSurface, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                         Text("$value K", color = colors.onSurfaceVariant, fontSize = 10.sp, style = NumberStyle)
                     }
                 }
@@ -535,33 +575,33 @@ private fun ScheduleSettings(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Choice("По солнцу", config.auto && config.sun, onClick = { onConfigChange { copy(auto = true, sun = true) } })
-            Choice("По времени", config.auto && !config.sun, onClick = { onConfigChange { copy(auto = true, sun = false) } })
-            Choice("Всегда", !config.auto, onClick = { onConfigChange { copy(auto = false, sun = false) } })
+            Choice(stringResource(R.string.sun_schedule), config.auto && config.sun, onClick = { onConfigChange { copy(auto = true, sun = true) } })
+            Choice(stringResource(R.string.manual_schedule), config.auto && !config.sun, onClick = { onConfigChange { copy(auto = true, sun = false) } })
+            Choice(stringResource(R.string.always), !config.auto, onClick = { onConfigChange { copy(auto = false, sun = false) } })
         }
 
         if (!config.auto) return@Column
         Column {
             if (config.sun) {
                 SettingLine(
-                    title = "Место",
-                    value = if (locating) "Поиск…" else if (config.hasPlace) "Обновить" else "Определить",
+                    title = stringResource(R.string.location),
+                    value = if (locating) stringResource(R.string.locating) else if (config.hasPlace) stringResource(R.string.refresh_location) else stringResource(R.string.find_location),
                     description = placeNote ?: if (config.hasPlace) {
                         "%.2f, %.2f".format(config.lat, config.lon)
                     } else {
-                        "Пока место не задано, действует время ниже"
+                        stringResource(R.string.location_fallback)
                     },
                     onClick = if (locating) null else onLocate,
                 )
-                if (config.hasPlace) SettingLine("Закат и рассвет", timeRange(window))
+                if (config.hasPlace) SettingLine(stringResource(R.string.sun_times), timeRange(window))
             }
             if (!config.sun || !config.hasPlace) {
-                SettingLine("Включать", Schedule.hhmm(config.on), onClick = { onPickTime("on") })
-                SettingLine("Выключать", Schedule.hhmm(config.off), onClick = { onPickTime("off") })
+                SettingLine(stringResource(R.string.turn_on), Schedule.hhmm(config.on), onClick = { onPickTime("on") })
+                SettingLine(stringResource(R.string.turn_off), Schedule.hhmm(config.off), onClick = { onPickTime("off") })
             }
             SettingLine(
-                "Плавный переход",
-                if (config.fade == 0) "Сразу" else "${config.fade} мин",
+                stringResource(R.string.fade),
+                if (config.fade == 0) stringResource(R.string.immediate) else stringResource(R.string.minutes, config.fade),
                 onClick = { onConfigChange { copy(fade = FadeOptions[(FadeOptions.indexOf(fade) + 1).mod(FadeOptions.size)]) } },
             )
         }
@@ -605,6 +645,11 @@ private fun timeRange(window: Window) = "${Schedule.hhmm(window.start)}–${Sche
 
 @Composable
 private fun DayProfile(config: Config, window: Window, minute: Int) {
+    val profileDescription = if (config.auto) {
+        stringResource(R.string.profile_range, timeRange(window))
+    } else {
+        stringResource(R.string.profile_all_day)
+    }
     val colors = MaterialTheme.colorScheme
     val plot = if (config.enabled) colors.onSurface else colors.onSurfaceVariant
     val grid = colors.onSurface.copy(alpha = 0.12f)
@@ -617,11 +662,11 @@ private fun DayProfile(config: Config, window: Window, minute: Int) {
         Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text("Сейчас ${Schedule.hhmm(minute)}", color = colors.onSurfaceVariant, fontSize = 13.sp, style = NumberStyle)
+        Text(stringResource(R.string.now, Schedule.hhmm(minute)), color = colors.onSurfaceVariant, fontSize = 13.sp, style = NumberStyle)
         Canvas(
             Modifier.fillMaxWidth().height(54.dp)
                 .semantics {
-                    contentDescription = if (config.auto) "Профиль фильтра, ${timeRange(window)}" else "Профиль фильтра на весь день"
+                    contentDescription = profileDescription
                 },
         ) {
             val inset = 7.dp.toPx()
@@ -668,8 +713,8 @@ private fun TimeDialog(title: String, minute: Int, onDismiss: () -> Unit, onPick
         title = { Text(title) },
         text = { TimePicker(state = time) },
         confirmButton = {
-            TextButton(onClick = { onPick(time.hour * 60 + time.minute) }) { Text("Готово") }
+            TextButton(onClick = { onPick(time.hour * 60 + time.minute) }) { Text(stringResource(R.string.done)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }

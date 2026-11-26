@@ -41,27 +41,26 @@ object Schedule {
     fun hhmm(minute: Int) = "%02d:%02d".format(minute / 60, minute % 60)
 }
 
-data class FilterState(val text: String, val color: Int = 0, val alpha: Float = 0f) {
+data class FilterState(val text: Int, val color: Int = 0, val alpha: Float = 0f, val args: List<Any> = emptyList()) {
     companion object {
         fun current(c: Config, minute: Int, w: Window, trusted: Boolean, canDraw: Boolean): FilterState {
-            if (!c.enabled) return FilterState("Выключено")
-            if (!trusted && !canDraw) return FilterState("Нужно разрешение")
-            if (c.strength == 0 && c.dim == 0) return FilterState("Сила и затемнение — 0%")
-            if (c.auto && w.start == w.end) return FilterState("Время включения и выключения совпадает")
+            if (!c.enabled) return FilterState(R.string.status_off)
+            if (!trusted && !canDraw) return FilterState(R.string.status_permission)
+            if (c.strength == 0 && c.dim == 0) return FilterState(R.string.status_zero)
+            if (c.auto && w.start == w.end) return FilterState(R.string.status_same_time)
 
             val level = Schedule.level(c, minute, w)
-            if (level == 0f) return FilterState("Тепло с ${Schedule.hhmm(w.start)}")
+            if (level == 0f) return FilterState(R.string.status_wait, args = listOf(Schedule.hhmm(w.start)))
 
             val maxAlpha = if (trusted) Tint.MAX_ALPHA_TRUSTED else Tint.MAX_ALPHA
             val (color, alpha) = Tint.layer(c, level, maxAlpha)
-            if (alpha == 0f) return FilterState("Плавный переход")
+            if (alpha == 0f) return FilterState(R.string.fade)
 
-            val text = when {
-                level < 1f -> "${c.kelvin} K · ${(level * 100).toInt()}%"
-                c.auto -> "${c.kelvin} K · до ${Schedule.hhmm(w.end)}"
-                else -> "${c.kelvin} K · фильтр активен"
+            return when {
+                level < 1f -> FilterState(R.string.status_progress, color, alpha, listOf(c.kelvin, (level * 100).toInt()))
+                c.auto -> FilterState(R.string.status_until, color, alpha, listOf(c.kelvin, Schedule.hhmm(w.end)))
+                else -> FilterState(R.string.status_active, color, alpha, listOf(c.kelvin))
             }
-            return FilterState(text, color, alpha)
         }
     }
 }
